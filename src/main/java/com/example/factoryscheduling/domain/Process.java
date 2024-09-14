@@ -22,8 +22,10 @@ public class Process {
     private int processNumber;
     private int nextProcessNumber;
     private int processingTime;
+    @PlanningVariable(valueRangeProviderRefs = "startTimeRange")
     private LocalDateTime startTime;
-    private LocalDateTime endTime;
+
+    private LocalDateTime actualStartTime;
 
     @ManyToOne
     @JoinColumn(name = "order_id")
@@ -48,8 +50,26 @@ public class Process {
         this.startTime = startTime;
     }
 
+    // Existing getters and setters...
+
+    public LocalDateTime getActualStartTime() {
+        return actualStartTime;
+    }
+
+    public void setActualStartTime(LocalDateTime actualStartTime) {
+        this.actualStartTime = actualStartTime;
+    }
+
+    public LocalDateTime getEffectiveStartTime() {
+        return actualStartTime != null ? actualStartTime : startTime;
+    }
+
     public LocalDateTime getEndTime() {
-        return startTime != null ? startTime.plusMinutes(processingTime) : null;
+        return getEffectiveStartTime() != null ? getEffectiveStartTime().plusMinutes(processingTime) : null;
+    }
+
+    public boolean hasStarted() {
+        return actualStartTime != null;
     }
 
     public Long getId() {
@@ -106,10 +126,6 @@ public class Process {
 
     public void setMachine(Machine machine) {
         this.machine = machine;
-    }
-
-    public void setEndTime(LocalDateTime endTime) {
-        this.endTime = endTime;
     }
 
     public ProcessStatus getStatus() {

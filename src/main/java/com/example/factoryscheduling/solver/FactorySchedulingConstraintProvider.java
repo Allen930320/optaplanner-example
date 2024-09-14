@@ -21,7 +21,8 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                 minimizeMakespan(constraintFactory),
                 preventMaintenanceMachineAssignment(constraintFactory),
                 preferIdleMachines(constraintFactory),
-                preventUnnecessaryMachineAssignment(constraintFactory)
+                preventUnnecessaryMachineAssignment(constraintFactory),
+                respectActualStartTimes(constraintFactory)
         };
     }
 
@@ -55,31 +56,37 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     }
 
     /**
-     * 订单优先级约束
-     * 尽量确保高优先级的订单在低优先级订单之前开始处理
+     * 确保调度尊重已经开始的工序的实际开始时间
      */
+    private Constraint respectActualStartTimes(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Process.class)
+                .filter(Process::hasStarted)
+                .filter(process -> !process.getStartTime().equals(process.getActualStartTime()))
+                .penalize(HardSoftScore.ONE_HARD,
+                        process -> (int) Duration.between(process.getActualStartTime(), process.getStartTime()).toMinutes())
+                .asConstraint("Respect actual start times");
+    }
+
+    // 修改其他约束以使用 getEffectiveStartTime() 而不是 getStartTime()
+
     private Constraint orderPriorityConstraint(ConstraintFactory constraintFactory) {
         return constraintFactory.forEachUniquePair(Process.class,
                         Joiners.equal(Process::getMachine),
                         Joiners.lessThan(p -> p.getOrder().getPriority()))
-                .filter((p1, p2) -> p1.getStartTime().isAfter(p2.getStartTime()))
+                .filter((p1, p2) -> p1.getEffectiveStartTime().isAfter(p2.getEffectiveStartTime()))
                 .penalize(HardSoftScore.ONE_SOFT,
-                        (p1, p2) -> (int) Duration.between(p2.getStartTime(), p1.getStartTime()).toMinutes())
+                        (p1, p2) -> (int) Duration.between(p2.getEffectiveStartTime(), p1.getEffectiveStartTime()).toMinutes())
                 .asConstraint("Order priority");
     }
 
-    /**
-     * 工序顺序约束
-     * 确保同一订单中的工序按正确的顺序执行
-     */
     private Constraint processSequenceConstraint(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Process.class)
                 .join(Process.class,
                         Joiners.equal(Process::getOrder),
                         Joiners.lessThan(Process::getProcessNumber))
-                .filter((p1, p2) -> !p1.getEndTime().isBefore(p2.getStartTime()))
+                .filter((p1, p2) -> !p1.getEndTime().isBefore(p2.getEffectiveStartTime()))
                 .penalize(HardSoftScore.ONE_HARD,
-                        (p1, p2) -> (int) Duration.between(p2.getStartTime(), p1.getEndTime()).toMinutes())
+                        (p1, p2) -> (int) Duration.between(p2.getEffectiveStartTime(), p1.getEndTime()).toMinutes())
                 .asConstraint("Process sequence");
     }
 
