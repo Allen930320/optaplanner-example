@@ -1,4 +1,4 @@
-package com.allen.example;
+package com.example.factoryscheduling;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
