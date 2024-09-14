@@ -11,10 +11,10 @@ import java.util.Optional;
 @Service
 public class OrderService {
 
-    private OrderRepository orderRepository;
+    private final OrderRepository orderRepository;
 
     @Autowired
-    public void setOrderRepository(OrderRepository orderRepository) {
+    public OrderService(OrderRepository orderRepository) {
         this.orderRepository = orderRepository;
     }
 
@@ -48,5 +48,8 @@ public class OrderService {
 
     public void deleteOrder(Long id) {
         orderRepository.deleteById(id);
+    }
+    public void updateAll(List<Order> orders){
+        orderRepository.saveAll(orders);
     }
 }

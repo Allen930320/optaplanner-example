@@ -11,10 +11,10 @@ import java.util.Optional;
 @Service
 public class ProcessService {
 
-    private  ProcessRepository processRepository;
+    private final ProcessRepository processRepository;
 
     @Autowired
-    public void setProcessRepository(ProcessRepository processRepository) {
+    public ProcessService(ProcessRepository processRepository) {
         this.processRepository = processRepository;
     }
 
@@ -40,6 +40,10 @@ public class ProcessService {
             existingProcess.setProcessingTime(processDetails.getProcessingTime());
             existingProcess.setOrder(processDetails.getOrder());
             existingProcess.setMachine(processDetails.getMachine());
+            existingProcess.setStartTime(processDetails.getStartTime());
+            existingProcess.setActualStartTime(processDetails.getActualStartTime());
+            existingProcess.setStatus(processDetails.getStatus());
+            existingProcess.setRequiresMachine(processDetails.isRequiresMachine());
             return processRepository.save(existingProcess);
         }
         return null;
@@ -47,5 +51,9 @@ public class ProcessService {
 
     public void deleteProcess(Long id) {
         processRepository.deleteById(id);
+    }
+
+    public void updateAll(List<Process> processes) {
+        processRepository.saveAll(processes);
     }
 }

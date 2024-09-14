@@ -1,9 +1,7 @@
 package com.example.factoryscheduling.solver;
 
-import com.example.factoryscheduling.domain.Machine;
-import com.example.factoryscheduling.domain.MachineStatus;
+import com.example.factoryscheduling.domain.*;
 import com.example.factoryscheduling.domain.Process;
-import com.example.factoryscheduling.domain.ProcessStatus;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.optaplanner.core.api.score.stream.*;
 
@@ -22,13 +20,13 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                 preventMaintenanceMachineAssignment(constraintFactory),
                 preferIdleMachines(constraintFactory),
                 preventUnnecessaryMachineAssignment(constraintFactory),
-                respectActualStartTimes(constraintFactory)
+                respectActualStartTimes(constraintFactory),
+                avoidMaintenanceOverlap(constraintFactory)
         };
     }
 
     /**
-     * 机器容量约束
-     * 确保每台机器在任何时间点的负载不超过其容量
+     * 机器容量约束：确保每台机器的总处理时间不超过其容量
      */
     private Constraint machineCapacityConstraint(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Process.class)
@@ -41,8 +39,7 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     }
 
     /**
-     * 机器状态约束
-     * 确保机器状态与当前工序状态一致
+     * 机器状态约束：确保机器状态与当前工序状态一致
      */
     private Constraint machineStatusConstraint(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Process.class)
@@ -56,19 +53,8 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     }
 
     /**
-     * 确保调度尊重已经开始的工序的实际开始时间
+     * 订单优先级约束：尽量确保高优先级的订单在低优先级订单之前开始处理
      */
-    private Constraint respectActualStartTimes(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(Process.class)
-                .filter(Process::hasStarted)
-                .filter(process -> !process.getStartTime().equals(process.getActualStartTime()))
-                .penalize(HardSoftScore.ONE_HARD,
-                        process -> (int) Duration.between(process.getActualStartTime(), process.getStartTime()).toMinutes())
-                .asConstraint("Respect actual start times");
-    }
-
-    // 修改其他约束以使用 getEffectiveStartTime() 而不是 getStartTime()
-
     private Constraint orderPriorityConstraint(ConstraintFactory constraintFactory) {
         return constraintFactory.forEachUniquePair(Process.class,
                         Joiners.equal(Process::getMachine),
@@ -79,6 +65,9 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                 .asConstraint("Order priority");
     }
 
+    /**
+     * 工序顺序约束：确保同一订单中的工序按正确的顺序执行
+     */
     private Constraint processSequenceConstraint(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Process.class)
                 .join(Process.class,
@@ -100,9 +89,18 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                         p -> (int) Duration.between(p.getOrder().getPlannedStartTime(), p.getEndTime()).toMinutes())
                 .asConstraint("Minimize makespan");
     }
+//    private Constraint minimizeMakespan(ConstraintFactory constraintFactory) {
+//        return constraintFactory.forEach(Order.class)
+//                .join(Process.class, Joiners.equal(order -> order, Process::getOrder))
+//                .groupBy((order, process) -> order,
+//                        ConstraintCollectors.max((order, process) -> process.getEndTime()))
+//                .penalize(HardSoftScore.ONE_SOFT,
+//                        (order, lastEndTime) -> (int) Duration.between(order.getPlannedStartTime(), lastEndTime).toMinutes())
+//                .asConstraint("Minimize makespan");
+//    }
 
     /**
-     * 确保处于维护状态的机器不被分配新的工序
+     * 防止维护中的机器被分配新工序
      */
     private Constraint preventMaintenanceMachineAssignment(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Process.class)
@@ -128,12 +126,47 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     }
 
     /**
-     * 对于不需要机器的工序，确保它们不被分配到任何机器上
+     * 防止不需要机器的工序被分配到机器上
      */
     private Constraint preventUnnecessaryMachineAssignment(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Process.class)
                 .filter(process -> !process.isRequiresMachine() && process.getMachine() != null)
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Prevent unnecessary machine assignment");
+    }
+
+    /**
+     * 尊重已经开始的工序的实际开始时间
+     */
+    private Constraint respectActualStartTimes(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Process.class)
+                .filter(Process::hasStarted)
+                .filter(process -> !process.getStartTime().equals(process.getActualStartTime()))
+                .penalize(HardSoftScore.ONE_HARD,
+                        process -> (int) Duration.between(process.getActualStartTime(), process.getStartTime()).toMinutes())
+                .asConstraint("Respect actual start times");
+    }
+
+    /**
+     * 避免工序与机器维护时间重叠
+     */
+    private Constraint avoidMaintenanceOverlap(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Process.class)
+                .join(MachineMaintenance.class,
+                        Joiners.equal(Process::getMachine, MachineMaintenance::getMachine),
+                        Joiners.overlapping(
+                                process -> process.getEffectiveStartTime(),
+                                process -> process.getEndTime(),
+                                MachineMaintenance::getStartTime,
+                                MachineMaintenance::getEndTime))
+                .penalize(HardSoftScore.ONE_HARD,
+                        (process, maintenance) -> {
+                            long overlap = Duration.between(
+                                    process.getEffectiveStartTime().isAfter(maintenance.getStartTime()) ? process.getEffectiveStartTime() : maintenance.getStartTime(),
+                                    process.getEndTime().isBefore(maintenance.getEndTime()) ? process.getEndTime() : maintenance.getEndTime()
+                            ).toMinutes();
+                            return (int) overlap;
+                        })
+                .asConstraint("Avoid maintenance overlap");
     }
 }

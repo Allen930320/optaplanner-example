@@ -1,11 +1,16 @@
-package com.example.factoryscheduling.domain;
+package com.example.factoryscheduling.solver;
 
+import com.example.factoryscheduling.domain.Order;
+import com.example.factoryscheduling.domain.Process;
+import com.example.factoryscheduling.domain.Machine;
+import com.example.factoryscheduling.domain.MachineMaintenance;
 import org.optaplanner.core.api.domain.solution.PlanningEntityCollectionProperty;
 import org.optaplanner.core.api.domain.solution.PlanningScore;
 import org.optaplanner.core.api.domain.solution.PlanningSolution;
 import org.optaplanner.core.api.domain.solution.ProblemFactCollectionProperty;
 import org.optaplanner.core.api.domain.valuerange.ValueRangeProvider;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
+import org.optaplanner.core.api.solver.SolverStatus;
 
 import java.util.List;
 
@@ -22,86 +27,73 @@ public class FactorySchedulingSolution {
     @PlanningEntityCollectionProperty
     private List<Process> processes;
 
+    @ProblemFactCollectionProperty
+    private List<MachineMaintenance> maintenances;
+
     @PlanningScore
     private HardSoftScore score;
 
+    private SolverStatus solverStatus;;
+
+    // 无参构造函数，OptaPlanner需要
     public FactorySchedulingSolution() {
     }
 
-    public FactorySchedulingSolution(List<Machine> machines, List<Order> orders, List<Process> processes) {
-        this.machines = machines;
+    // 全参数构造函数
+    public FactorySchedulingSolution(List<Order> orders, List<Process> processes, List<Machine> machines, List<MachineMaintenance> maintenances) {
         this.orders = orders;
         this.processes = processes;
-    }
-
-    public FactorySchedulingSolution(List<Machine> machines, List<Order> orders, List<Process> processes, HardSoftScore score) {
         this.machines = machines;
-        this.orders = orders;
-        this.processes = processes;
-        this.score = score;
+        this.maintenances = maintenances;
     }
 
-    /**
-     * 获取所有机器
-     * @return 机器列表
-     */
+    // Getter和Setter方法
+
     public List<Machine> getMachines() {
         return machines;
     }
 
-    /**
-     * 设置机器列表
-     * @param machines 机器列表
-     */
     public void setMachines(List<Machine> machines) {
         this.machines = machines;
     }
 
-    /**
-     * 获取所有订单
-     * @return 订单列表
-     */
     public List<Order> getOrders() {
         return orders;
     }
 
-    /**
-     * 设置订单列表
-     * @param orders 订单列表
-     */
     public void setOrders(List<Order> orders) {
         this.orders = orders;
     }
 
-    /**
-     * 获取所有工序
-     * @return 工序列表
-     */
     public List<Process> getProcesses() {
         return processes;
     }
 
-    /**
-     * 设置工序列表
-     * @param processes 工序列表
-     */
     public void setProcesses(List<Process> processes) {
         this.processes = processes;
     }
 
-    /**
-     * 获取调度解决方案的得分
-     * @return 硬软得分
-     */
+    public List<MachineMaintenance> getMaintenances() {
+        return maintenances;
+    }
+
+    public void setMaintenances(List<MachineMaintenance> maintenances) {
+        this.maintenances = maintenances;
+    }
+
     public HardSoftScore getScore() {
         return score;
     }
 
-    /**
-     * 设置调度解决方案的得分
-     * @param score 硬软得分
-     */
     public void setScore(HardSoftScore score) {
         this.score = score;
+    }
+
+    public SolverStatus getSolverStatus() {
+        return solverStatus;
+    }
+
+    public void setSolverStatus(SolverStatus solverStatus) {
+        this.solverStatus = solverStatus;
     }
 }

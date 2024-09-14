@@ -47,4 +47,8 @@ public class MachineService {
     public void deleteMachine(Long id) {
         machineRepository.deleteById(id);
     }
+
+    public void updateAll(List<Machine> machines){
+        machineRepository.saveAll(machines);
+    }
 }
