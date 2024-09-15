@@ -19,9 +19,12 @@ public class Order {
     private int priority;
     private String status;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<Process> processes;
+    @OneToOne
+    @JoinColumn(name = "start_process_id")
+    private Process startProcess;
 
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Process> processes;
 
     public Long getId() {
         return id;
@@ -85,5 +88,13 @@ public class Order {
 
     public void setProcesses(List<Process> processes) {
         this.processes = processes;
+    }
+
+    public Process getStartProcess() {
+        return startProcess;
+    }
+
+    public void setStartProcess(Process startProcess) {
+        this.startProcess = startProcess;
     }
 }

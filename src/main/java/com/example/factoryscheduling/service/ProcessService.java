@@ -5,6 +5,7 @@ import com.example.factoryscheduling.repository.ProcessRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,10 +13,12 @@ import java.util.Optional;
 public class ProcessService {
 
     private final ProcessRepository processRepository;
+    private final ProcessLinkService processLinkService;
 
     @Autowired
-    public ProcessService(ProcessRepository processRepository) {
+    public ProcessService(ProcessRepository processRepository, ProcessLinkService processLinkService) {
         this.processRepository = processRepository;
+        this.processLinkService = processLinkService;
     }
 
     public List<Process> getAllProcesses() {
@@ -26,33 +29,46 @@ public class ProcessService {
         return processRepository.findById(id);
     }
 
+    @Transactional
     public Process createProcess(Process process) {
-        return processRepository.save(process);
-    }
+        Process savedProcess = processRepository.save(process);
 
-    public Process updateProcess(Long id, Process processDetails) {
-        Optional<Process> process = processRepository.findById(id);
-        if (process.isPresent()) {
-            Process existingProcess = process.get();
-            existingProcess.setName(processDetails.getName());
-            existingProcess.setProcessNumber(processDetails.getProcessNumber());
-            existingProcess.setNextProcessNumber(processDetails.getNextProcessNumber());
-            existingProcess.setProcessingTime(processDetails.getProcessingTime());
-            existingProcess.setOrder(processDetails.getOrder());
-            existingProcess.setMachine(processDetails.getMachine());
-            existingProcess.setStartTime(processDetails.getStartTime());
-            existingProcess.setActualStartTime(processDetails.getActualStartTime());
-            existingProcess.setStatus(processDetails.getStatus());
-            existingProcess.setRequiresMachine(processDetails.isRequiresMachine());
-            return processRepository.save(existingProcess);
+        // 创建工序链接
+        if (process.getNextLinks() != null) {
+            process.getNextLinks().forEach(link -> {
+                link.setFromProcess(savedProcess);
+                processLinkService.createProcessLink(link);
+            });
         }
-        return null;
+
+        return savedProcess;
     }
 
+    @Transactional
+    public Process updateProcess(Long id, Process processDetails) {
+        return processRepository.findById(id)
+                .map(existingProcess -> {
+                    existingProcess.setName(processDetails.getName());
+                    existingProcess.setProcessingTime(processDetails.getProcessingTime());
+                    existingProcess.setOrder(processDetails.getOrder());
+                    existingProcess.setMachine(processDetails.getMachine());
+                    existingProcess.setStartTime(processDetails.getStartTime());
+                    existingProcess.setActualStartTime(processDetails.getActualStartTime());
+                    existingProcess.setStatus(processDetails.getStatus());
+                    existingProcess.setRequiresMachine(processDetails.isRequiresMachine());
+
+                    // 更新工序链接
+                    processLinkService.updateProcessLinks(existingProcess, processDetails.getNextLinks());
+
+                    return processRepository.save(existingProcess);
+                })
+                .orElseThrow(() -> new RuntimeException("Process not found with id " + id));
+    }
+
+    @Transactional
     public void deleteProcess(Long id) {
         processRepository.deleteById(id);
     }
-
     public void updateAll(List<Process> processes) {
         processRepository.saveAll(processes);
     }

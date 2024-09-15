@@ -7,6 +7,7 @@ import org.optaplanner.core.api.domain.variable.PlanningVariable;
 import javax.persistence.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "processes")
@@ -14,18 +15,11 @@ import java.time.LocalDateTime;
 public class Process {
 
     @Id
-    @PlanningId
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
-    private int processNumber;
-    private int nextProcessNumber;
     private int processingTime;
-    @PlanningVariable(valueRangeProviderRefs = "startTimeRange")
-    private LocalDateTime startTime;
-
-    private LocalDateTime actualStartTime;
 
     @ManyToOne
     @JoinColumn(name = "order_id")
@@ -36,11 +30,21 @@ public class Process {
     @JoinColumn(name = "machine_id")
     private Machine machine;
 
+    @PlanningVariable(valueRangeProviderRefs = "startTimeRange")
+    private LocalDateTime startTime;
+
+    private LocalDateTime actualStartTime;
 
     @Enumerated(EnumType.STRING)
     private ProcessStatus status;
 
     private boolean requiresMachine;
+
+    @OneToMany(mappedBy = "fromProcess", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProcessLink> nextLinks;
+
+    @OneToMany(mappedBy = "toProcess", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProcessLink> previousLinks;
 
     public LocalDateTime getStartTime() {
         return startTime;
@@ -50,7 +54,21 @@ public class Process {
         this.startTime = startTime;
     }
 
-    // Existing getters and setters...
+    public List<ProcessLink> getNextLinks() {
+        return nextLinks;
+    }
+
+    public void setNextLinks(List<ProcessLink> nextLinks) {
+        this.nextLinks = nextLinks;
+    }
+
+    public List<ProcessLink> getPreviousLinks() {
+        return previousLinks;
+    }
+
+    public void setPreviousLinks(List<ProcessLink> previousLinks) {
+        this.previousLinks = previousLinks;
+    }
 
     public LocalDateTime getActualStartTime() {
         return actualStartTime;
@@ -86,22 +104,6 @@ public class Process {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public int getProcessNumber() {
-        return processNumber;
-    }
-
-    public void setProcessNumber(int processNumber) {
-        this.processNumber = processNumber;
-    }
-
-    public int getNextProcessNumber() {
-        return nextProcessNumber;
-    }
-
-    public void setNextProcessNumber(int nextProcessNumber) {
-        this.nextProcessNumber = nextProcessNumber;
     }
 
     public int getProcessingTime() {

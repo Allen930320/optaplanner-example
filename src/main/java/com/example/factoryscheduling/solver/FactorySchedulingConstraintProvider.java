@@ -1,11 +1,14 @@
 package com.example.factoryscheduling.solver;
 
-import com.example.factoryscheduling.domain.*;
 import com.example.factoryscheduling.domain.Process;
+import com.example.factoryscheduling.domain.*;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.optaplanner.core.api.score.stream.*;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FactorySchedulingConstraintProvider implements ConstraintProvider {
 
@@ -21,6 +24,7 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                 preferIdleMachines(constraintFactory),
                 preventUnnecessaryMachineAssignment(constraintFactory),
                 respectActualStartTimes(constraintFactory),
+                parallelProcessConstraint(constraintFactory),
                 avoidMaintenanceOverlap(constraintFactory)
         };
     }
@@ -64,40 +68,6 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                         (p1, p2) -> (int) Duration.between(p2.getEffectiveStartTime(), p1.getEffectiveStartTime()).toMinutes())
                 .asConstraint("Order priority");
     }
-
-    /**
-     * 工序顺序约束：确保同一订单中的工序按正确的顺序执行
-     */
-    private Constraint processSequenceConstraint(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(Process.class)
-                .join(Process.class,
-                        Joiners.equal(Process::getOrder),
-                        Joiners.lessThan(Process::getProcessNumber))
-                .filter((p1, p2) -> !p1.getEndTime().isBefore(p2.getEffectiveStartTime()))
-                .penalize(HardSoftScore.ONE_HARD,
-                        (p1, p2) -> (int) Duration.between(p2.getEffectiveStartTime(), p1.getEndTime()).toMinutes())
-                .asConstraint("Process sequence");
-    }
-
-    /**
-     * 最小化制造周期
-     * 尽量减少所有订单的总完成时间
-     */
-    private Constraint minimizeMakespan(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(Process.class)
-                .reward(HardSoftScore.ONE_SOFT,
-                        p -> (int) Duration.between(p.getOrder().getPlannedStartTime(), p.getEndTime()).toMinutes())
-                .asConstraint("Minimize makespan");
-    }
-//    private Constraint minimizeMakespan(ConstraintFactory constraintFactory) {
-//        return constraintFactory.forEach(Order.class)
-//                .join(Process.class, Joiners.equal(order -> order, Process::getOrder))
-//                .groupBy((order, process) -> order,
-//                        ConstraintCollectors.max((order, process) -> process.getEndTime()))
-//                .penalize(HardSoftScore.ONE_SOFT,
-//                        (order, lastEndTime) -> (int) Duration.between(order.getPlannedStartTime(), lastEndTime).toMinutes())
-//                .asConstraint("Minimize makespan");
-//    }
 
     /**
      * 防止维护中的机器被分配新工序
@@ -155,8 +125,8 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                 .join(MachineMaintenance.class,
                         Joiners.equal(Process::getMachine, MachineMaintenance::getMachine),
                         Joiners.overlapping(
-                                process -> process.getEffectiveStartTime(),
-                                process -> process.getEndTime(),
+                                Process::getEffectiveStartTime,
+                                Process::getEndTime,
                                 MachineMaintenance::getStartTime,
                                 MachineMaintenance::getEndTime))
                 .penalize(HardSoftScore.ONE_HARD,
@@ -168,5 +138,81 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                             return (int) overlap;
                         })
                 .asConstraint("Avoid maintenance overlap");
+    }
+
+    /**
+     * 工序顺序约束：确保非并行工序按正确的顺序执行
+     */
+    private Constraint processSequenceConstraint(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(ProcessLink.class)
+                .filter(link -> !link.isParallel())
+                .penalize(HardSoftScore.ONE_HARD, link -> {
+                    Process fromProcess = link.getFromProcess();
+                    Process toProcess = link.getToProcess();
+                    if (fromProcess.getEndTime() == null || toProcess.getEffectiveStartTime() == null) {
+                        return 0; // 如果开始时间未设置，不进行惩罚
+                    }
+                    long overlap =
+                            Duration.between(fromProcess.getEndTime(), toProcess.getEffectiveStartTime()).toMinutes();
+                    return overlap < 0 ? (int) -overlap : 0; // 只在重叠时惩罚
+                })
+                .asConstraint("Process sequence");
+    }
+
+    /**
+     * 并行工序约束：确保并行工序的开始时间尽可能接近
+     */
+    private Constraint parallelProcessConstraint(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(ProcessLink.class)
+                .filter(ProcessLink::isParallel)
+                .penalize(HardSoftScore.ONE_SOFT, link -> {
+                    Process fromProcess = link.getFromProcess();
+                    Process toProcess = link.getToProcess();
+                    if (fromProcess.getEffectiveStartTime() == null || toProcess.getEffectiveStartTime() == null) {
+                        return 0; // 如果开始时间未设置，不进行惩罚
+                    }
+                    return (int) Math.abs(
+                            Duration.between(fromProcess.getEffectiveStartTime(), toProcess.getEffectiveStartTime())
+                                    .toMinutes());
+                })
+                .asConstraint("Parallel process");
+    }
+
+    /**
+     * 最小化制造周期：尽量减少所有订单的总完成时间
+     */
+    private Constraint minimizeMakespan(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Order.class)
+                .penalize(HardSoftScore.ONE_SOFT, order -> {
+                    List<Process> lastProcesses = findLastProcesses(order.getStartProcess());
+                    if (lastProcesses.isEmpty() || order.getPlannedStartTime() == null) {
+                        return 0; // 如果没有最后的工序或时间未设置，不进行惩罚
+                    }
+                    LocalDateTime latestEndTime = lastProcesses.stream()
+                            .map(Process::getEndTime)
+                            .max(LocalDateTime::compareTo)
+                            .orElse(null);
+                    if (latestEndTime == null) {
+                        return 0;
+                    }
+                    return (int) Duration.between(order.getPlannedStartTime(), latestEndTime).toMinutes();
+                })
+                .asConstraint("Minimize makespan");
+    }
+
+    private List<Process> findLastProcesses(Process startProcess) {
+        List<Process> lastProcesses = new ArrayList<>();
+        findLastProcessesRecursive(startProcess, lastProcesses);
+        return lastProcesses;
+    }
+
+    private void findLastProcessesRecursive(Process process, List<Process> lastProcesses) {
+        if (process.getNextLinks().isEmpty()) {
+            lastProcesses.add(process);
+        } else {
+            for (ProcessLink link : process.getNextLinks()) {
+                findLastProcessesRecursive(link.getToProcess(), lastProcesses);
+            }
+        }
     }
 }
