@@ -37,8 +37,7 @@ public class ProcessLinkService {
     public ProcessLink updateProcessLink(Long id, ProcessLink processLinkDetails) {
         return processLinkRepository.findById(id)
                 .map(existingLink -> {
-                    existingLink.setFromProcess(processLinkDetails.getFromProcess());
-                    existingLink.setToProcess(processLinkDetails.getToProcess());
+                    existingLink.setProcess(processLinkDetails.getProcess());
                     existingLink.setParallel(processLinkDetails.isParallel());
                     return processLinkRepository.save(existingLink);
                 })
@@ -57,9 +56,13 @@ public class ProcessLinkService {
         // 创建新的链接
         if (newLinks != null) {
             newLinks.forEach(link -> {
-                link.setFromProcess(process);
+                link.setProcess(process);
                 createProcessLink(link);
             });
         }
+    }
+
+    public void saveAll(List<ProcessLink> links){
+        processLinkRepository.saveAll(links);
     }
 }

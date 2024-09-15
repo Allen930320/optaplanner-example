@@ -13,6 +13,7 @@ public class MachineMaintenance {
 
     @ManyToOne
     @JoinColumn(name = "machine_id", nullable = false)
+    @org.hibernate.annotations.ForeignKey(name = "none")
     private Machine machine;
 
     private LocalDateTime startTime;

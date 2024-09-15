@@ -16,18 +16,21 @@ public class Process {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @PlanningId
     private Long id;
 
     private String name;
     private int processingTime;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
+    @org.hibernate.annotations.ForeignKey(name = "none")
     private Order order;
 
     @ManyToOne
     @PlanningVariable(valueRangeProviderRefs = "machineRange")
     @JoinColumn(name = "machine_id")
+    @org.hibernate.annotations.ForeignKey(name = "none")
     private Machine machine;
 
     @PlanningVariable(valueRangeProviderRefs = "startTimeRange")
@@ -40,11 +43,10 @@ public class Process {
 
     private boolean requiresMachine;
 
-    @OneToMany(mappedBy = "fromProcess", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProcessLink> nextLinks;
+    @OneToMany(mappedBy = "process",fetch = FetchType.LAZY)
+    @org.hibernate.annotations.ForeignKey(name = "none")
+    private List<ProcessLink> next;
 
-    @OneToMany(mappedBy = "toProcess", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProcessLink> previousLinks;
 
     public LocalDateTime getStartTime() {
         return startTime;
@@ -54,21 +56,15 @@ public class Process {
         this.startTime = startTime;
     }
 
-    public List<ProcessLink> getNextLinks() {
-        return nextLinks;
+    public List<ProcessLink> getNext() {
+        return next;
     }
 
-    public void setNextLinks(List<ProcessLink> nextLinks) {
-        this.nextLinks = nextLinks;
+    public void setNext(List<ProcessLink> next) {
+        this.next = next;
     }
 
-    public List<ProcessLink> getPreviousLinks() {
-        return previousLinks;
-    }
 
-    public void setPreviousLinks(List<ProcessLink> previousLinks) {
-        this.previousLinks = previousLinks;
-    }
 
     public LocalDateTime getActualStartTime() {
         return actualStartTime;

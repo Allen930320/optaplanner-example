@@ -33,16 +33,18 @@ public class OrderService {
     @Transactional
     public Order createOrder(Order order) {
         // 保存订单
-        Order savedOrder = orderRepository.save(order);
-
+        orderRepository.save(order);
+        List<Process> processes = order.getProcesses();
+        processService.saveAll(processes);
+       Process startProcess = processService.getProcessById(order.getStartProcess().getId()).orElse(null);
         // 如果订单有起始工序，保存并设置
-        if (order.getStartProcess() != null) {
-            Process startProcess = processService.createProcess(order.getStartProcess());
-            savedOrder.setStartProcess(startProcess);
-            savedOrder = orderRepository.save(savedOrder);
-        }
-
-        return savedOrder;
+//        if (order.getStartProcess() != null) {
+//            Process startProcess = processService.createProcess(order.getStartProcess());
+//            savedOrder.setStartProcess(startProcess);
+//            savedOrder = orderRepository.save(savedOrder);
+//        }
+        order.setStartProcess(startProcess);
+        return order;
     }
 
     @Transactional

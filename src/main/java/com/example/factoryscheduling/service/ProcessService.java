@@ -1,11 +1,14 @@
 package com.example.factoryscheduling.service;
 
 import com.example.factoryscheduling.domain.Process;
+import com.example.factoryscheduling.domain.ProcessLink;
 import com.example.factoryscheduling.repository.ProcessRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import javax.transaction.Transactional;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,16 +35,30 @@ public class ProcessService {
     @Transactional
     public Process createProcess(Process process) {
         Process savedProcess = processRepository.save(process);
-
-        // 创建工序链接
-        if (process.getNextLinks() != null) {
-            process.getNextLinks().forEach(link -> {
-                link.setFromProcess(savedProcess);
-                processLinkService.createProcessLink(link);
-            });
-        }
+        List<ProcessLink> links = process.getNext();
 
         return savedProcess;
+    }
+
+    public void saveAll(List<Process> processes) {
+        processes = processRepository.saveAll(processes);
+        for (Process process : processes) {
+            List<ProcessLink> links = new ArrayList<>();
+            if (!CollectionUtils.isEmpty(process.getNext())) {
+                for (ProcessLink link : process.getNext()) {
+                    if (link.getProcess() == null) {
+                        continue;
+                    }
+                    link.setCurrent(process);
+                    Process next = processRepository.getById(link.getProcess().getId());
+                    link.setProcess(next);
+                    processLinkService.createProcessLink(link);
+                    links.add(link);
+                }
+            }
+            process.setNext(links);
+        }
+
     }
 
     @Transactional
@@ -58,7 +75,7 @@ public class ProcessService {
                     existingProcess.setRequiresMachine(processDetails.isRequiresMachine());
 
                     // 更新工序链接
-                    processLinkService.updateProcessLinks(existingProcess, processDetails.getNextLinks());
+                    processLinkService.updateProcessLinks(existingProcess, processDetails.getNext());
 
                     return processRepository.save(existingProcess);
                 })

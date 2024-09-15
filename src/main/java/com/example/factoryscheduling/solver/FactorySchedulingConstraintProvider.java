@@ -4,10 +4,10 @@ import com.example.factoryscheduling.domain.Process;
 import com.example.factoryscheduling.domain.*;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.optaplanner.core.api.score.stream.*;
+import org.springframework.util.CollectionUtils;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 public class FactorySchedulingConstraintProvider implements ConstraintProvider {
@@ -144,16 +144,18 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
      * 工序顺序约束：确保非并行工序按正确的顺序执行
      */
     private Constraint processSequenceConstraint(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(ProcessLink.class)
-                .filter(link -> !link.isParallel())
-                .penalize(HardSoftScore.ONE_HARD, link -> {
-                    Process fromProcess = link.getFromProcess();
-                    Process toProcess = link.getToProcess();
-                    if (fromProcess.getEndTime() == null || toProcess.getEffectiveStartTime() == null) {
-                        return 0; // 如果开始时间未设置，不进行惩罚
+        return constraintFactory.forEach(Process.class)
+                .filter(process -> !CollectionUtils.isEmpty(process.getNext()))
+                .penalize(HardSoftScore.ONE_HARD, process -> {
+                    if (CollectionUtils.isEmpty(process.getNext()) || process.getEffectiveStartTime() == null) {
+                        return 0;
                     }
-                    long overlap =
-                            Duration.between(fromProcess.getEndTime(), toProcess.getEffectiveStartTime()).toMinutes();
+                    LocalDateTime end = process.getNext().stream().map(ProcessLink::getProcess)
+                            .map(Process::getEndTime).max(LocalDateTime::compareTo)
+                            .orElse(LocalDateTime.now());
+                    LocalDateTime effect =
+                            process.getEffectiveStartTime();
+                    long overlap = Duration.between(end, effect).toMinutes();
                     return overlap < 0 ? (int) -overlap : 0; // 只在重叠时惩罚
                 })
                 .asConstraint("Process sequence");
@@ -163,16 +165,18 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
      * 并行工序约束：确保并行工序的开始时间尽可能接近
      */
     private Constraint parallelProcessConstraint(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(ProcessLink.class)
-                .filter(ProcessLink::isParallel)
-                .penalize(HardSoftScore.ONE_SOFT, link -> {
-                    Process fromProcess = link.getFromProcess();
-                    Process toProcess = link.getToProcess();
-                    if (fromProcess.getEffectiveStartTime() == null || toProcess.getEffectiveStartTime() == null) {
-                        return 0; // 如果开始时间未设置，不进行惩罚
+        return constraintFactory.forEach(Process.class)
+                .filter(process -> !CollectionUtils.isEmpty(process.getNext()))
+                .penalize(HardSoftScore.ONE_SOFT, process -> {
+                    if (CollectionUtils.isEmpty(process.getNext()) || process.getEffectiveStartTime() == null) {
+                        return 0;
                     }
+                    LocalDateTime next = process.getNext().stream().map(ProcessLink::getProcess)
+                            .map(Process::getEffectiveStartTime).max(LocalDateTime::compareTo)
+                            .orElse(LocalDateTime.now());
+                    LocalDateTime previous = process.getEffectiveStartTime();
                     return (int) Math.abs(
-                            Duration.between(fromProcess.getEffectiveStartTime(), toProcess.getEffectiveStartTime())
+                            Duration.between(previous, next)
                                     .toMinutes());
                 })
                 .asConstraint("Parallel process");
@@ -184,14 +188,11 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     private Constraint minimizeMakespan(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Order.class)
                 .penalize(HardSoftScore.ONE_SOFT, order -> {
-                    List<Process> lastProcesses = findLastProcesses(order.getStartProcess());
-                    if (lastProcesses.isEmpty() || order.getPlannedStartTime() == null) {
+                    Process lastProcesses = findLastProcesses(order.getStartProcess());
+                    if (lastProcesses == null || order.getPlannedStartTime() == null) {
                         return 0; // 如果没有最后的工序或时间未设置，不进行惩罚
                     }
-                    LocalDateTime latestEndTime = lastProcesses.stream()
-                            .map(Process::getEndTime)
-                            .max(LocalDateTime::compareTo)
-                            .orElse(null);
+                    LocalDateTime latestEndTime = lastProcesses.getEndTime();
                     if (latestEndTime == null) {
                         return 0;
                     }
@@ -200,19 +201,14 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                 .asConstraint("Minimize makespan");
     }
 
-    private List<Process> findLastProcesses(Process startProcess) {
-        List<Process> lastProcesses = new ArrayList<>();
-        findLastProcessesRecursive(startProcess, lastProcesses);
-        return lastProcesses;
+    private Process findLastProcesses(Process startProcess) {
+        List<ProcessLink> lastProcesses = startProcess.getNext();
+        if (CollectionUtils.isEmpty(lastProcesses)) {
+            return startProcess;
+        }
+        ProcessLink link = lastProcesses.get(0);
+        return findLastProcesses(link.getProcess());
+
     }
 
-    private void findLastProcessesRecursive(Process process, List<Process> lastProcesses) {
-        if (process.getNextLinks().isEmpty()) {
-            lastProcesses.add(process);
-        } else {
-            for (ProcessLink link : process.getNextLinks()) {
-                findLastProcessesRecursive(link.getToProcess(), lastProcesses);
-            }
-        }
-    }
 }

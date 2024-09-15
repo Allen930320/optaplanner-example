@@ -51,4 +51,9 @@ public class MachineService {
     public void updateAll(List<Machine> machines){
         machineRepository.saveAll(machines);
     }
+
+    public List<Machine> create(List<Machine> machines){
+        machineRepository.saveAll(machines);
+        return machines;
+    }
 }

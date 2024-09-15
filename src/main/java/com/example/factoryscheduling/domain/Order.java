@@ -19,11 +19,13 @@ public class Order {
     private int priority;
     private String status;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "start_process_id")
+    @org.hibernate.annotations.ForeignKey(name = "none")
     private Process startProcess;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
+    @org.hibernate.annotations.ForeignKey(name = "none")
     private List<Process> processes;
 
     public Long getId() {

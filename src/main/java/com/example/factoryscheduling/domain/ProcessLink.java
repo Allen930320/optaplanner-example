@@ -10,13 +10,15 @@ public class ProcessLink {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "from_process_id")
-    private Process fromProcess;
+    @OneToOne
+    @JoinColumn(name = "current_id")
+    @org.hibernate.annotations.ForeignKey(name = "none")
+    private Process current;
 
     @ManyToOne
-    @JoinColumn(name = "to_process_id")
-    private Process toProcess;
+    @JoinColumn(name = "next_id")
+    @org.hibernate.annotations.ForeignKey(name = "none")
+    private Process process;
 
     private boolean isParallel;
 
@@ -25,9 +27,8 @@ public class ProcessLink {
     public ProcessLink() {
     }
 
-    public ProcessLink(Process fromProcess, Process toProcess, boolean isParallel) {
-        this.fromProcess = fromProcess;
-        this.toProcess = toProcess;
+    public ProcessLink(Process process, boolean isParallel) {
+        this.process = process;
         this.isParallel = isParallel;
     }
 
@@ -39,20 +40,12 @@ public class ProcessLink {
         this.id = id;
     }
 
-    public Process getFromProcess() {
-        return fromProcess;
+    public Process getProcess() {
+        return process;
     }
 
-    public void setFromProcess(Process fromProcess) {
-        this.fromProcess = fromProcess;
-    }
-
-    public Process getToProcess() {
-        return toProcess;
-    }
-
-    public void setToProcess(Process toProcess) {
-        this.toProcess = toProcess;
+    public void setProcess(Process process) {
+        this.process = process;
     }
 
     public boolean isParallel() {
@@ -61,5 +54,13 @@ public class ProcessLink {
 
     public void setParallel(boolean parallel) {
         isParallel = parallel;
+    }
+
+    public Process getCurrent() {
+        return current;
+    }
+
+    public void setCurrent(Process current) {
+        this.current = current;
     }
 }

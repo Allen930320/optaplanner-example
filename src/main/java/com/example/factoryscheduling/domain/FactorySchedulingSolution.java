@@ -1,9 +1,7 @@
 package com.example.factoryscheduling.solver;
 
-import com.example.factoryscheduling.domain.Order;
+import com.example.factoryscheduling.domain.*;
 import com.example.factoryscheduling.domain.Process;
-import com.example.factoryscheduling.domain.Machine;
-import com.example.factoryscheduling.domain.MachineMaintenance;
 import org.optaplanner.core.api.domain.solution.PlanningEntityCollectionProperty;
 import org.optaplanner.core.api.domain.solution.PlanningScore;
 import org.optaplanner.core.api.domain.solution.PlanningSolution;
@@ -12,7 +10,9 @@ import org.optaplanner.core.api.domain.valuerange.ValueRangeProvider;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.optaplanner.core.api.solver.SolverStatus;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @PlanningSolution
 public class FactorySchedulingSolution {
@@ -30,11 +30,18 @@ public class FactorySchedulingSolution {
     @ProblemFactCollectionProperty
     private List<MachineMaintenance> maintenances;
 
+    @ProblemFactCollectionProperty
+    private List<ProcessLink> processLinks;
+
     @PlanningScore
     private HardSoftScore score;
 
     private SolverStatus solverStatus;;
 
+    @ValueRangeProvider(id = "startTimeRange")
+    public List<LocalDateTime> getStartTimeRange() {
+         return processes.stream().map(Process::getStartTime).collect(Collectors.toList());
+    }
     // 无参构造函数，OptaPlanner需要
     public FactorySchedulingSolution() {
     }
@@ -95,5 +102,13 @@ public class FactorySchedulingSolution {
 
     public void setSolverStatus(SolverStatus solverStatus) {
         this.solverStatus = solverStatus;
+    }
+
+    public List<ProcessLink> getProcessLinks() {
+        return processLinks;
+    }
+
+    public void setProcessLinks(List<ProcessLink> processLinks) {
+        this.processLinks = processLinks;
     }
 }
