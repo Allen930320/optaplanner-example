@@ -1,7 +1,7 @@
 package com.example.factoryscheduling.repository;
 
-import com.example.factoryscheduling.domain.ProcessLink;
+import com.example.factoryscheduling.domain.Link;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ProcessLinkRepository  extends JpaRepository<ProcessLink,Long> {
+public interface ProcessLinkRepository  extends JpaRepository<Link,Long> {
 }

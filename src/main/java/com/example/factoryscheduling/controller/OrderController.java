@@ -1,7 +1,9 @@
 package com.example.factoryscheduling.controller;
 
 import com.example.factoryscheduling.domain.Order;
+import com.example.factoryscheduling.domain.Process;
 import com.example.factoryscheduling.service.OrderService;
+import com.example.factoryscheduling.service.ProcessService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +15,13 @@ import java.util.List;
 public class OrderController {
 
     private  OrderService orderService;
+
+    private ProcessService processService;
+
+    @Autowired
+    public void setProcessService(ProcessService processService) {
+        this.processService = processService;
+    }
 
     @Autowired
     public void setOrderService(OrderService orderService) {
@@ -34,6 +43,17 @@ public class OrderController {
     @PostMapping
     public Order createOrder(@RequestBody Order order) {
         return orderService.createOrder(order);
+    }
+
+
+    @PostMapping("/list")
+    public ResponseEntity<List<Order>> createOrders(@RequestBody List<Order> orders) {
+        return ResponseEntity.ok(orderService.createOrders(orders));
+    }
+
+    @PostMapping("/processes")
+    public ResponseEntity<List<Process>> createProcesses(@RequestBody List<Process> processes) {
+        return ResponseEntity.ok(processService.createProcesses(processes));
     }
 
     @PutMapping("/{id}")

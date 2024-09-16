@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class SchedulingService {
@@ -66,24 +67,34 @@ public class SchedulingService {
      * @param problemId 问题ID
      * @return 当前最佳解决方案
      */
-    public Optional<FactorySchedulingSolution> getBestSolution(Long problemId) {
-        return Optional.ofNullable(solverManager.getSolverStatus(problemId))
-                .filter(status -> !status.equals(SolverStatus.NOT_SOLVING))
+    public FactorySchedulingSolution getBestSolution(Long problemId) {
+        FactorySchedulingSolution schedulingSolution = Optional.ofNullable(solverManager.getSolverStatus(problemId))
                 .map(status -> {
                     FactorySchedulingSolution solution = loadProblem(problemId);
                     solutionManager.update(solution);
                     solution.setSolverStatus(status);
                     return solution;
-                });
+                }).orElse(new FactorySchedulingSolution());
+        return getSchedulingSolution(schedulingSolution);
     }
+
+    public FactorySchedulingSolution getSchedulingSolution(FactorySchedulingSolution solution) {
+        List<Order> orders = solution.getOrders().stream().peek(orderService::getOrder).collect(Collectors.toList());
+        List<Process> processes = solution.getProcesses().stream().peek(orderService::ignoreStartProcess).collect(Collectors.toList());
+        solution.setOrders(orders);
+        solution.setProcesses(processes);
+        return solution;
+    }
+
+
 
     /**
      * 获取解决方案得分
      * @param problemId 问题ID
      * @return 解决方案得分
      */
-    public Optional<HardSoftScore> getScore(Long problemId) {
-        return getBestSolution(problemId).map(FactorySchedulingSolution::getScore);
+    public HardSoftScore getScore(Long problemId) {
+        return getBestSolution(problemId).getScore();
     }
 
     /**
@@ -133,8 +144,7 @@ public class SchedulingService {
      */
     public boolean isSolutionFeasible(Long problemId) {
         return getBestSolution(problemId)
-                .map(solution -> solution.getScore().isFeasible())
-                .orElse(false);
+                .getScore().isFeasible();
     }
 
     /**
@@ -153,7 +163,8 @@ public class SchedulingService {
      * @param problemId 问题ID
      * @return 解决方案的解释
      */
-    public Optional<ScoreExplanation<FactorySchedulingSolution, HardSoftScore>> explainSolution(Long problemId) {
-        return getBestSolution(problemId).map(solutionManager::explain);
+    public ScoreExplanation<FactorySchedulingSolution, HardSoftScore> explainSolution(Long problemId) {
+        FactorySchedulingSolution solution = getBestSolution(problemId);
+        return solutionManager.explain(solution);
     }
 }

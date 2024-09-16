@@ -1,15 +1,17 @@
 package com.example.factoryscheduling.domain;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "orders")
 public class Order {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO,generator = "MyId")
+    @GenericGenerator(name = "MyId",strategy = "com.example.factoryscheduling.domain.InsertGenerator")
     private Long id;
 
     private String name;
@@ -19,14 +21,9 @@ public class Order {
     private int priority;
     private String status;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne
     @JoinColumn(name = "start_process_id")
-    @org.hibernate.annotations.ForeignKey(name = "none")
     private Process startProcess;
-
-    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
-    @org.hibernate.annotations.ForeignKey(name = "none")
-    private List<Process> processes;
 
     public Long getId() {
         return id;
@@ -82,14 +79,6 @@ public class Order {
 
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public List<Process> getProcesses() {
-        return processes;
-    }
-
-    public void setProcesses(List<Process> processes) {
-        this.processes = processes;
     }
 
     public Process getStartProcess() {

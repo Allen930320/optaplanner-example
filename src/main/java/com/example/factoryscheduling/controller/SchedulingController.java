@@ -32,16 +32,14 @@ public class SchedulingController {
 
     @GetMapping("/solution/{problemId}")
     public ResponseEntity<FactorySchedulingSolution> getBestSolution(@PathVariable Long problemId) {
-        return schedulingService.getBestSolution(problemId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        FactorySchedulingSolution solution = schedulingService.getBestSolution(problemId);
+        return ResponseEntity.ok(solution);
     }
 
     @GetMapping("/score/{problemId}")
     public ResponseEntity<HardSoftScore> getScore(@PathVariable Long problemId) {
-        return schedulingService.getScore(problemId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        HardSoftScore hardSoftScore = schedulingService.getScore(problemId);
+        return ResponseEntity.ok(hardSoftScore);
     }
 
     @GetMapping("/status/{problemId}")

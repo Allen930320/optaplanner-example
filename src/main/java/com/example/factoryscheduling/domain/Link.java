@@ -1,34 +1,35 @@
 package com.example.factoryscheduling.domain;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import javax.persistence.*;
 
 @Entity
-@Table(name = "process_links")
-public class ProcessLink {
+@Table(name = "links")
+public class Link {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO,generator = "MyId")
+    @GenericGenerator(name = "MyId",strategy = "com.example.factoryscheduling.domain.InsertGenerator")
     private Long id;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "current_id")
-    @org.hibernate.annotations.ForeignKey(name = "none")
     private Process current;
 
     @ManyToOne
     @JoinColumn(name = "next_id")
-    @org.hibernate.annotations.ForeignKey(name = "none")
-    private Process process;
+    private Process next;
 
     private boolean isParallel;
 
 
 
-    public ProcessLink() {
+    public Link() {
     }
 
-    public ProcessLink(Process process, boolean isParallel) {
-        this.process = process;
+    public Link(Process process, boolean isParallel) {
+        this.next = process;
         this.isParallel = isParallel;
     }
 
@@ -40,12 +41,12 @@ public class ProcessLink {
         this.id = id;
     }
 
-    public Process getProcess() {
-        return process;
+    public Process getNext() {
+        return next;
     }
 
-    public void setProcess(Process process) {
-        this.process = process;
+    public void setNext(Process next) {
+        this.next = next;
     }
 
     public boolean isParallel() {

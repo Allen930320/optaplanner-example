@@ -5,7 +5,6 @@ import org.optaplanner.core.api.domain.lookup.PlanningId;
 import org.optaplanner.core.api.domain.variable.PlanningVariable;
 
 import javax.persistence.*;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,17 +19,16 @@ public class Process {
     private Long id;
 
     private String name;
+
     private int processingTime;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "order_id")
-    @org.hibernate.annotations.ForeignKey(name = "none")
     private Order order;
 
     @ManyToOne
     @PlanningVariable(valueRangeProviderRefs = "machineRange")
     @JoinColumn(name = "machine_id")
-    @org.hibernate.annotations.ForeignKey(name = "none")
     private Machine machine;
 
     @PlanningVariable(valueRangeProviderRefs = "startTimeRange")
@@ -43,9 +41,8 @@ public class Process {
 
     private boolean requiresMachine;
 
-    @OneToMany(mappedBy = "process",fetch = FetchType.LAZY)
-    @org.hibernate.annotations.ForeignKey(name = "none")
-    private List<ProcessLink> next;
+    @OneToMany(mappedBy = "current", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    private List<Link> link;
 
 
     public LocalDateTime getStartTime() {
@@ -56,15 +53,13 @@ public class Process {
         this.startTime = startTime;
     }
 
-    public List<ProcessLink> getNext() {
-        return next;
+    public List<Link> getLink() {
+        return link;
     }
 
-    public void setNext(List<ProcessLink> next) {
-        this.next = next;
+    public void setLink(List<Link> link) {
+        this.link = link;
     }
-
-
 
     public LocalDateTime getActualStartTime() {
         return actualStartTime;

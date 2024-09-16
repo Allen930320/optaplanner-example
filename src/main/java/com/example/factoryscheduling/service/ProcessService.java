@@ -1,7 +1,7 @@
 package com.example.factoryscheduling.service;
 
+import com.example.factoryscheduling.domain.Link;
 import com.example.factoryscheduling.domain.Process;
-import com.example.factoryscheduling.domain.ProcessLink;
 import com.example.factoryscheduling.repository.ProcessRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,10 +16,10 @@ import java.util.Optional;
 public class ProcessService {
 
     private final ProcessRepository processRepository;
-    private final ProcessLinkService processLinkService;
+    private final LinkService processLinkService;
 
     @Autowired
-    public ProcessService(ProcessRepository processRepository, ProcessLinkService processLinkService) {
+    public ProcessService(ProcessRepository processRepository, LinkService processLinkService) {
         this.processRepository = processRepository;
         this.processLinkService = processLinkService;
     }
@@ -35,28 +35,31 @@ public class ProcessService {
     @Transactional
     public Process createProcess(Process process) {
         Process savedProcess = processRepository.save(process);
-        List<ProcessLink> links = process.getNext();
-
         return savedProcess;
     }
 
+    @Transactional
+    public List<Process> createProcesses(List<Process> processes) {
+        return processRepository.saveAll(processes);
+
+    }
     public void saveAll(List<Process> processes) {
         processes = processRepository.saveAll(processes);
         for (Process process : processes) {
-            List<ProcessLink> links = new ArrayList<>();
-            if (!CollectionUtils.isEmpty(process.getNext())) {
-                for (ProcessLink link : process.getNext()) {
-                    if (link.getProcess() == null) {
+            List<Link> links = new ArrayList<>();
+            if (!CollectionUtils.isEmpty(process.getLink())) {
+                for (Link link : process.getLink()) {
+                    if (link.getNext() == null) {
                         continue;
                     }
                     link.setCurrent(process);
-                    Process next = processRepository.getById(link.getProcess().getId());
-                    link.setProcess(next);
+                    Process next = processRepository.getById(link.getNext().getId());
+                    link.setNext(next);
                     processLinkService.createProcessLink(link);
                     links.add(link);
                 }
             }
-            process.setNext(links);
+            process.setLink(links);
         }
 
     }
@@ -75,11 +78,16 @@ public class ProcessService {
                     existingProcess.setRequiresMachine(processDetails.isRequiresMachine());
 
                     // 更新工序链接
-                    processLinkService.updateProcessLinks(existingProcess, processDetails.getNext());
+                    processLinkService.updateProcessLinks(existingProcess, processDetails.getLink());
 
                     return processRepository.save(existingProcess);
                 })
                 .orElseThrow(() -> new RuntimeException("Process not found with id " + id));
+    }
+
+    @Transactional
+    public Process update(Process process) {
+        return processRepository.save(process);
     }
 
     @Transactional

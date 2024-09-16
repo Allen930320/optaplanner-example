@@ -61,7 +61,8 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
      */
     private Constraint orderPriorityConstraint(ConstraintFactory constraintFactory) {
         return constraintFactory.forEachUniquePair(Process.class,
-                        Joiners.equal(Process::getMachine),
+                Joiners.equal(Process::getMachine),
+                Joiners.equal(p -> p, o -> o.getOrder() != null),
                         Joiners.lessThan(p -> p.getOrder().getPriority()))
                 .filter((p1, p2) -> p1.getEffectiveStartTime().isAfter(p2.getEffectiveStartTime()))
                 .penalize(HardSoftScore.ONE_SOFT,
@@ -145,12 +146,12 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
      */
     private Constraint processSequenceConstraint(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Process.class)
-                .filter(process -> !CollectionUtils.isEmpty(process.getNext()))
+                .filter(process -> !CollectionUtils.isEmpty(process.getLink()))
                 .penalize(HardSoftScore.ONE_HARD, process -> {
-                    if (CollectionUtils.isEmpty(process.getNext()) || process.getEffectiveStartTime() == null) {
+                    if (CollectionUtils.isEmpty(process.getLink()) || process.getEffectiveStartTime() == null) {
                         return 0;
                     }
-                    LocalDateTime end = process.getNext().stream().map(ProcessLink::getProcess)
+                    LocalDateTime end = process.getLink().stream().map(Link::getNext)
                             .map(Process::getEndTime).max(LocalDateTime::compareTo)
                             .orElse(LocalDateTime.now());
                     LocalDateTime effect =
@@ -166,12 +167,12 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
      */
     private Constraint parallelProcessConstraint(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Process.class)
-                .filter(process -> !CollectionUtils.isEmpty(process.getNext()))
+                .filter(process -> !CollectionUtils.isEmpty(process.getLink()))
                 .penalize(HardSoftScore.ONE_SOFT, process -> {
-                    if (CollectionUtils.isEmpty(process.getNext()) || process.getEffectiveStartTime() == null) {
+                    if (CollectionUtils.isEmpty(process.getLink()) || process.getEffectiveStartTime() == null) {
                         return 0;
                     }
-                    LocalDateTime next = process.getNext().stream().map(ProcessLink::getProcess)
+                    LocalDateTime next = process.getLink().stream().map(Link::getNext)
                             .map(Process::getEffectiveStartTime).max(LocalDateTime::compareTo)
                             .orElse(LocalDateTime.now());
                     LocalDateTime previous = process.getEffectiveStartTime();
@@ -202,12 +203,12 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     }
 
     private Process findLastProcesses(Process startProcess) {
-        List<ProcessLink> lastProcesses = startProcess.getNext();
+        List<Link> lastProcesses = startProcess.getLink();
         if (CollectionUtils.isEmpty(lastProcesses)) {
             return startProcess;
         }
-        ProcessLink link = lastProcesses.get(0);
-        return findLastProcesses(link.getProcess());
+        Link link = lastProcesses.get(0);
+        return findLastProcesses(link.getNext());
 
     }
 

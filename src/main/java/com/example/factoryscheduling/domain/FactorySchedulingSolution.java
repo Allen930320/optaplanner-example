@@ -30,8 +30,6 @@ public class FactorySchedulingSolution {
     @ProblemFactCollectionProperty
     private List<MachineMaintenance> maintenances;
 
-    @ProblemFactCollectionProperty
-    private List<ProcessLink> processLinks;
 
     @PlanningScore
     private HardSoftScore score;
@@ -104,11 +102,4 @@ public class FactorySchedulingSolution {
         this.solverStatus = solverStatus;
     }
 
-    public List<ProcessLink> getProcessLinks() {
-        return processLinks;
-    }
-
-    public void setProcessLinks(List<ProcessLink> processLinks) {
-        this.processLinks = processLinks;
-    }
 }
