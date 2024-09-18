@@ -12,7 +12,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>2.6.13</spring-boot.version>
-        <version.org.optaplanner>8.45.0-SNAPSHOT</version.org.optaplanner>
+        <version.org.optaplanner>8.44.0.Final</version.org.optaplanner>
     </properties>
     <dependencies>
         <dependency>
@@ -56,8 +56,8 @@
         <dependency>
             <groupId>org.optaplanner</groupId>
             <artifactId>optaplanner-spring-boot-starter</artifactId>
-
         </dependency>
+
         <dependency>
             <groupId>org.optaplanner</groupId>
             <artifactId>optaplanner-test</artifactId>

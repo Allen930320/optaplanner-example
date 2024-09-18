@@ -21,14 +21,14 @@ public class FactorySchedulingSolution {
     @ValueRangeProvider(id = "machineRange")
     private List<Machine> machines;
 
-    @ProblemFactCollectionProperty
+    @PlanningEntityCollectionProperty
     private List<Order> orders;
 
-    @PlanningEntityCollectionProperty
+    @ValueRangeProvider(id = "processRange")
     private List<Process> processes;
-
-    @ProblemFactCollectionProperty
-    private List<MachineMaintenance> maintenances;
+//
+//    @ProblemFactCollectionProperty
+//    private List<MachineMaintenance> maintenances;
 
 
     @PlanningScore
@@ -45,11 +45,10 @@ public class FactorySchedulingSolution {
     }
 
     // 全参数构造函数
-    public FactorySchedulingSolution(List<Order> orders, List<Process> processes, List<Machine> machines, List<MachineMaintenance> maintenances) {
+    public FactorySchedulingSolution(List<Order> orders, List<Process> processes, List<Machine> machines) {
         this.orders = orders;
         this.processes = processes;
         this.machines = machines;
-        this.maintenances = maintenances;
     }
 
     // Getter和Setter方法
@@ -76,14 +75,6 @@ public class FactorySchedulingSolution {
 
     public void setProcesses(List<Process> processes) {
         this.processes = processes;
-    }
-
-    public List<MachineMaintenance> getMaintenances() {
-        return maintenances;
-    }
-
-    public void setMaintenances(List<MachineMaintenance> maintenances) {
-        this.maintenances = maintenances;
     }
 
     public HardSoftScore getScore() {

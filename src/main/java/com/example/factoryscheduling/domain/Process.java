@@ -1,5 +1,9 @@
 package com.example.factoryscheduling.domain;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import org.optaplanner.core.api.domain.entity.PlanningEntity;
 import org.optaplanner.core.api.domain.lookup.PlanningId;
 import org.optaplanner.core.api.domain.variable.PlanningVariable;
@@ -105,10 +109,12 @@ public class Process {
         this.processingTime = processingTime;
     }
 
+    @JsonIgnore
     public Order getOrder() {
         return order;
     }
 
+    @JsonProperty
     public void setOrder(Order order) {
         this.order = order;
     }

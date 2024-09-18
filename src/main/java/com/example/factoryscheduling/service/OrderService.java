@@ -55,61 +55,13 @@ public class OrderService {
         updateProcess(startProcess);
         startProcess.setLink(process.getLink());
         ergodicProcess(startProcess);
-        return getOrder(getOrderById(order.getId()).orElse(new Order()));
+        return  order;
     }
 
     @Transactional
     public List<Order> createOrders(List<Order> orders) {
         return orders.stream().map(this::createOrder).collect(Collectors.toList());
     }
-
-    public Order getOrder(Order order) {
-        Process startProcess = order.getStartProcess();
-        ignoreStartProcess(startProcess);
-        return order;
-    }
-
-    public void ignoreStartProcess(Process process) {
-        if (ObjectUtils.isEmpty(process) || CollectionUtils.isEmpty(process.getLink())) {
-            return;
-        }
-        Order order = process.getOrder();
-        if (!ObjectUtils.isEmpty(order)) {
-            order.setStartProcess(null);
-        }
-        for (Link link : process.getLink()) {
-            Process current = link.getCurrent();
-            if (current != null && current.getOrder() != null) {
-                Process copy = copyProcess(current);
-                link.setCurrent(copy);
-            }
-            Process next = link.getNext();
-            if (next != null && next.getOrder() != null) {
-                Order order2 = next.getOrder();
-                order2.setStartProcess(null);
-            } else {
-                continue;
-            }
-            ignoreStartProcess(next);
-        }
-    }
-
-    private Process copyProcess(Process process) {
-        Process copy = new Process();
-        copy.setId(process.getId());
-        Order order = process.getOrder();
-        order.setStartProcess(null);
-        copy.setOrder(order);
-        copy.setName(process.getName());
-        copy.setStatus(process.getStatus());
-        copy.setMachine(process.getMachine());
-        copy.setStartTime(process.getStartTime());
-        copy.setActualStartTime(process.getActualStartTime());
-        copy.setProcessingTime(process.getProcessingTime());
-        copy.setRequiresMachine(process.isRequiresMachine());
-        return copy;
-    }
-
 
     private void updateProcess(Process process) {
         processService.update(process);

@@ -1,5 +1,7 @@
 package com.example.factoryscheduling.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
@@ -57,10 +59,12 @@ public class Link {
         isParallel = parallel;
     }
 
+    @JsonIgnore
     public Process getCurrent() {
         return current;
     }
 
+    @JsonProperty
     public void setCurrent(Process current) {
         this.current = current;
     }

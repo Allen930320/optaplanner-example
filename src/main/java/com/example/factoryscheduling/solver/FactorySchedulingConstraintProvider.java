@@ -19,18 +19,18 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                 machineStatusConstraint(constraintFactory),
                 orderPriorityConstraint(constraintFactory),
                 processSequenceConstraint(constraintFactory),
-                minimizeMakespan(constraintFactory),
+                        minimizeMakeSpan(constraintFactory),
                 preventMaintenanceMachineAssignment(constraintFactory),
                 preferIdleMachines(constraintFactory),
                 preventUnnecessaryMachineAssignment(constraintFactory),
                 respectActualStartTimes(constraintFactory),
                 parallelProcessConstraint(constraintFactory),
-                avoidMaintenanceOverlap(constraintFactory)
+                        // avoidMaintenanceOverlap(constraintFactory)
         };
     }
 
     /**
-     * 机器容量约束：确保每台机器的总处理时间不超过其容量
+     * 机器容量约束：确保每台机器的总处理量不超过其容量
      */
     private Constraint machineCapacityConstraint(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Process.class)
@@ -121,25 +121,26 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     /**
      * 避免工序与机器维护时间重叠
      */
-    private Constraint avoidMaintenanceOverlap(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(Process.class)
-                .join(MachineMaintenance.class,
-                        Joiners.equal(Process::getMachine, MachineMaintenance::getMachine),
-                        Joiners.overlapping(
-                                Process::getEffectiveStartTime,
-                                Process::getEndTime,
-                                MachineMaintenance::getStartTime,
-                                MachineMaintenance::getEndTime))
-                .penalize(HardSoftScore.ONE_HARD,
-                        (process, maintenance) -> {
-                            long overlap = Duration.between(
-                                    process.getEffectiveStartTime().isAfter(maintenance.getStartTime()) ? process.getEffectiveStartTime() : maintenance.getStartTime(),
-                                    process.getEndTime().isBefore(maintenance.getEndTime()) ? process.getEndTime() : maintenance.getEndTime()
-                            ).toMinutes();
-                            return (int) overlap;
-                        })
-                .asConstraint("Avoid maintenance overlap");
-    }
+    // private Constraint avoidMaintenanceOverlap(ConstraintFactory constraintFactory) {
+    // return constraintFactory.forEach(Process.class)
+    // .join(MachineMaintenance.class,
+    // Joiners.equal(Process::getMachine, MachineMaintenance::getMachine),
+    // Joiners.overlapping(
+    // Process::getEffectiveStartTime,
+    // Process::getEndTime,
+    // MachineMaintenance::getStartTime,
+    // MachineMaintenance::getEndTime))
+    // .penalize(HardSoftScore.ONE_HARD,
+    // (process, maintenance) -> {
+    // long overlap = Duration.between(
+    // process.getEffectiveStartTime().isAfter(maintenance.getStartTime()) ? process.getEffectiveStartTime() :
+    // maintenance.getStartTime(),
+    // process.getEndTime().isBefore(maintenance.getEndTime()) ? process.getEndTime() : maintenance.getEndTime()
+    // ).toMinutes();
+    // return (int) overlap;
+    // })
+    // .asConstraint("Avoid maintenance overlap");
+    // }
 
     /**
      * 工序顺序约束：确保非并行工序按正确的顺序执行
@@ -186,30 +187,35 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     /**
      * 最小化制造周期：尽量减少所有订单的总完成时间
      */
-    private Constraint minimizeMakespan(ConstraintFactory constraintFactory) {
+    private Constraint minimizeMakeSpan(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Order.class)
                 .penalize(HardSoftScore.ONE_SOFT, order -> {
                     Process lastProcesses = findLastProcesses(order.getStartProcess());
-                    if (lastProcesses == null || order.getPlannedStartTime() == null) {
+                    if (order.getPlannedStartTime() == null) {
                         return 0; // 如果没有最后的工序或时间未设置，不进行惩罚
                     }
                     LocalDateTime latestEndTime = lastProcesses.getEndTime();
                     if (latestEndTime == null) {
                         return 0;
                     }
-                    return (int) Duration.between(order.getPlannedStartTime(), latestEndTime).toMinutes();
+                    Long duration = Duration.between(order.getPlannedStartTime(), latestEndTime).toMinutes();
+                    if (duration < 0) {
+                        order.setPlannedStartTime(latestEndTime);
+                        return 0;
+                    }
+                    return Math.toIntExact(duration);
                 })
                 .asConstraint("Minimize makespan");
     }
 
-    private Process findLastProcesses(Process startProcess) {
-        List<Link> lastProcesses = startProcess.getLink();
-        if (CollectionUtils.isEmpty(lastProcesses)) {
-            return startProcess;
+    private Process findLastProcesses(Process process) {
+        List<Link> nextLinks = process.getLink();
+        if (!CollectionUtils.isEmpty(nextLinks) && nextLinks.size() > 0) {
+            for (Link link : nextLinks) {
+                return findLastProcesses(link.getNext());
+            }
         }
-        Link link = lastProcesses.get(0);
-        return findLastProcesses(link.getNext());
-
+        return process;
     }
 
 }

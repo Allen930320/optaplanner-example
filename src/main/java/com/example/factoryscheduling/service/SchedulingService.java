@@ -1,9 +1,7 @@
 package com.example.factoryscheduling.service;
 
-import com.example.factoryscheduling.domain.Machine;
-import com.example.factoryscheduling.domain.MachineMaintenance;
-import com.example.factoryscheduling.domain.Order;
 import com.example.factoryscheduling.domain.Process;
+import com.example.factoryscheduling.domain.*;
 import com.example.factoryscheduling.solver.FactorySchedulingSolution;
 import org.optaplanner.core.api.score.ScoreExplanation;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
@@ -12,10 +10,10 @@ import org.optaplanner.core.api.solver.SolverManager;
 import org.optaplanner.core.api.solver.SolverStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import javax.transaction.Transactional;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -68,23 +66,15 @@ public class SchedulingService {
      * @return 当前最佳解决方案
      */
     public FactorySchedulingSolution getBestSolution(Long problemId) {
-        FactorySchedulingSolution schedulingSolution = Optional.ofNullable(solverManager.getSolverStatus(problemId))
+        return Optional.ofNullable(solverManager.getSolverStatus(problemId))
                 .map(status -> {
                     FactorySchedulingSolution solution = loadProblem(problemId);
                     solutionManager.update(solution);
                     solution.setSolverStatus(status);
                     return solution;
                 }).orElse(new FactorySchedulingSolution());
-        return getSchedulingSolution(schedulingSolution);
     }
 
-    public FactorySchedulingSolution getSchedulingSolution(FactorySchedulingSolution solution) {
-        List<Order> orders = solution.getOrders().stream().peek(orderService::getOrder).collect(Collectors.toList());
-        List<Process> processes = solution.getProcesses().stream().peek(orderService::ignoreStartProcess).collect(Collectors.toList());
-        solution.setOrders(orders);
-        solution.setProcesses(processes);
-        return solution;
-    }
 
 
 
@@ -112,10 +102,11 @@ public class SchedulingService {
      */
     private FactorySchedulingSolution loadProblem(Long id) {
         List<Order> orders = orderService.getAllOrders();
-        List<Process> processes = processService.getAllProcesses();
-        List<Machine> machines = machineService.getAllMachines();
+        List<Process> processes =
+                orders.stream().map(this::findAllOrderProcess).flatMap(List::stream).distinct().collect(Collectors.toList());
+        List<Machine> machines = processes.stream().map(Process::getMachine).distinct().collect(Collectors.toList());
         List<MachineMaintenance> maintenances = maintenanceService.getAllMaintenances();
-        return new FactorySchedulingSolution(orders, processes, machines, maintenances);
+        return new FactorySchedulingSolution(orders, processes, machines);
     }
 
     /**
@@ -131,10 +122,30 @@ public class SchedulingService {
 
     public FactorySchedulingSolution getFinalBestSolution() {
         List<Order> orders = orderService.getAllOrders();
-        List<Process> processes = processService.getAllProcesses();
-        List<Machine> machines = machineService.getAllMachines();
+        List<Process> processes =
+                orders.stream().map(this::findAllOrderProcess).flatMap(List::stream).distinct().collect(Collectors.toList());
+        List<Machine> machines = processes.stream().map(Process::getMachine).collect(Collectors.toList());
         List<MachineMaintenance> maintenances = maintenanceService.getAllMaintenances();
-        return new FactorySchedulingSolution(orders, processes, machines, maintenances);
+        return new FactorySchedulingSolution(orders, processes, machines);
+    }
+
+    private List<Process> findAllOrderProcess(Order order) {
+        Set<Process> processes = new HashSet<>();
+        Process startProcess = order.getStartProcess();
+        findAllProcesses(startProcess, processes);
+        return new ArrayList<>(processes);
+    }
+
+
+    private void findAllProcesses(Process process, Set<Process> processes) {
+        processes.add(process);
+        List<Link> nextLinks = process.getLink();
+        if (CollectionUtils.isEmpty(nextLinks) || nextLinks.size() == 0) {
+            return;
+        }
+        for (Link link:nextLinks){
+            findAllProcesses(link.getNext(),processes);
+        }
     }
 
     /**
