@@ -2,6 +2,7 @@ package com.example.factoryscheduling.controller;
 
 import com.example.factoryscheduling.service.SchedulingService;
 import com.example.factoryscheduling.solver.FactorySchedulingSolution;
+import org.optaplanner.core.api.score.ScoreExplanation;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -58,5 +59,10 @@ public class SchedulingController {
     public ResponseEntity<String> updateProblem(@PathVariable Long problemId, @RequestBody FactorySchedulingSolution updatedSolution) {
         schedulingService.updateProblem(problemId, updatedSolution);
         return ResponseEntity.ok("Problem updated for " + problemId);
+    }
+
+    @GetMapping("/explain/{problemId}")
+    public ResponseEntity<ScoreExplanation<FactorySchedulingSolution,HardSoftScore>> getExplanation(@PathVariable Long problemId ){
+        return ResponseEntity.ok(schedulingService.explainSolution(problemId));
     }
 }
