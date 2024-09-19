@@ -2,7 +2,7 @@ package com.example.factoryscheduling.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.hibernate.annotations.GenericGenerator;
+import org.optaplanner.core.api.domain.variable.PlanningVariable;
 
 import javax.persistence.*;
 
@@ -11,16 +11,17 @@ import javax.persistence.*;
 public class Link {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO,generator = "MyId")
-    @GenericGenerator(name = "MyId",strategy = "com.example.factoryscheduling.domain.InsertGenerator")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "current_id")
-    private Process current;
+    @JoinColumn(name = "previous_id")
+    @PlanningVariable(valueRangeProviderRefs = {"processRange"})
+    private Process previous;
 
     @ManyToOne
     @JoinColumn(name = "next_id")
+    @PlanningVariable(valueRangeProviderRefs = {"processRange"})
     private Process next;
 
     private boolean isParallel;
@@ -60,12 +61,12 @@ public class Link {
     }
 
     @JsonIgnore
-    public Process getCurrent() {
-        return current;
+    public Process getPrevious() {
+        return previous;
     }
 
     @JsonProperty
-    public void setCurrent(Process current) {
-        this.current = current;
+    public void setPrevious(Process current) {
+        this.previous = current;
     }
 }

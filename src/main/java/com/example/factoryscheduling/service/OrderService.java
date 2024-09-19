@@ -7,7 +7,6 @@ import com.example.factoryscheduling.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.ObjectUtils;
 
 import javax.transaction.Transactional;
 import java.util.List;
@@ -72,12 +71,12 @@ public class OrderService {
             return;
         }
         for (Link link : process.getLink()) {
-            if (link.getCurrent() == null) {
+            if (link.getPrevious() == null) {
                 continue;
             }
-            Long currentId = link.getCurrent().getId();
+            Long currentId = link.getPrevious().getId();
             if (Objects.equals(currentId, process.getId())) {
-                link.setCurrent(process);
+                link.setPrevious(process);
             }
             if (link.getNext() == null) {
                 continue;
@@ -100,30 +99,6 @@ public class OrderService {
         }
     }
 
-    @Transactional
-    public Order updateOrder(Long id, Order orderDetails) {
-        return orderRepository.findById(id)
-                .map(existingOrder -> {
-                    existingOrder.setName(orderDetails.getName());
-                    existingOrder.setOrderNumber(orderDetails.getOrderNumber());
-                    existingOrder.setPlannedStartTime(orderDetails.getPlannedStartTime());
-                    existingOrder.setPlannedEndTime(orderDetails.getPlannedEndTime());
-                    existingOrder.setPriority(orderDetails.getPriority());
-                    existingOrder.setStatus(orderDetails.getStatus());
-
-                    // 更新起始工序
-                    if (orderDetails.getStartProcess() != null) {
-                        Process updatedStartProcess = processService.updateProcess(
-                                existingOrder.getStartProcess().getId(),
-                                orderDetails.getStartProcess()
-                        );
-                        existingOrder.setStartProcess(updatedStartProcess);
-                    }
-
-                    return orderRepository.save(existingOrder);
-                })
-                .orElseThrow(() -> new RuntimeException("Order not found with id " + id));
-    }
 
     @Transactional
     public void deleteOrder(Long id) {

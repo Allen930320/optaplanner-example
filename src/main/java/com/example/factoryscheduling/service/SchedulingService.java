@@ -3,6 +3,7 @@ package com.example.factoryscheduling.service;
 import com.example.factoryscheduling.domain.Process;
 import com.example.factoryscheduling.domain.*;
 import com.example.factoryscheduling.solver.FactorySchedulingSolution;
+import lombok.extern.slf4j.Slf4j;
 import org.optaplanner.core.api.score.ScoreExplanation;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.optaplanner.core.api.solver.SolutionManager;
@@ -17,6 +18,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class SchedulingService {
 
     private final OrderService orderService;
@@ -115,6 +117,7 @@ public class SchedulingService {
      */
     @Transactional
     public void saveSolution(FactorySchedulingSolution solution) {
+        log.info("save result:{}", solution.getScore().toShortString());
         orderService.updateAll(solution.getOrders());
         processService.updateAll(solution.getProcesses());
         machineService.updateAll(solution.getMachines());

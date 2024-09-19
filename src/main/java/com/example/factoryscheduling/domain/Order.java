@@ -1,13 +1,11 @@
 package com.example.factoryscheduling.domain;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import org.hibernate.annotations.GenericGenerator;
 import org.optaplanner.core.api.domain.entity.PlanningEntity;
+import org.optaplanner.core.api.domain.lookup.PlanningId;
 import org.optaplanner.core.api.domain.variable.PlanningVariable;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "orders")
@@ -15,19 +13,17 @@ import java.time.LocalDateTime;
 public class Order {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO,generator = "MyId")
-    @GenericGenerator(name = "MyId",strategy = "com.example.factoryscheduling.domain.InsertGenerator")
+    @GeneratedValue(strategy = GenerationType.AUTO,generator = "orderId")
+    @GenericGenerator(name = "orderId",strategy = "com.example.factoryscheduling.domain.InsertGenerator")
+    @PlanningId
     private Long id;
-
     private String name;
     private String orderNumber;
-    private LocalDateTime plannedStartTime;
-    private LocalDateTime plannedEndTime;
     private int priority;
-    private String status;
+    private Status status;
 
     @OneToOne
-    @PlanningVariable(valueRangeProviderRefs = "processRange")
+    @PlanningVariable(valueRangeProviderRefs = {"processRange"})
     @JoinColumn(name = "start_process_id")
     private Process startProcess;
 
@@ -55,22 +51,6 @@ public class Order {
         this.orderNumber = orderNumber;
     }
 
-    public LocalDateTime getPlannedStartTime() {
-        return plannedStartTime;
-    }
-
-    public void setPlannedStartTime(LocalDateTime plannedStartTime) {
-        this.plannedStartTime = plannedStartTime;
-    }
-
-    public LocalDateTime getPlannedEndTime() {
-        return plannedEndTime;
-    }
-
-    public void setPlannedEndTime(LocalDateTime plannedEndTime) {
-        this.plannedEndTime = plannedEndTime;
-    }
-
     public int getPriority() {
         return priority;
     }
@@ -79,11 +59,11 @@ public class Order {
         this.priority = priority;
     }
 
-    public String getStatus() {
+    public Status getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(Status status) {
         this.status = status;
     }
 

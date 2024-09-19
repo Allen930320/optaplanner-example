@@ -52,7 +52,7 @@ public class ProcessService {
                     if (link.getNext() == null) {
                         continue;
                     }
-                    link.setCurrent(process);
+                    link.setPrevious(process);
                     Process next = processRepository.getById(link.getNext().getId());
                     link.setNext(next);
                     processLinkService.createProcessLink(link);
@@ -69,11 +69,10 @@ public class ProcessService {
         return processRepository.findById(id)
                 .map(existingProcess -> {
                     existingProcess.setName(processDetails.getName());
-                    existingProcess.setProcessingTime(processDetails.getProcessingTime());
+                    existingProcess.setDuration(processDetails.getDuration());
                     existingProcess.setOrder(processDetails.getOrder());
                     existingProcess.setMachine(processDetails.getMachine());
                     existingProcess.setStartTime(processDetails.getStartTime());
-                    existingProcess.setActualStartTime(processDetails.getActualStartTime());
                     existingProcess.setStatus(processDetails.getStatus());
                     existingProcess.setRequiresMachine(processDetails.isRequiresMachine());
 

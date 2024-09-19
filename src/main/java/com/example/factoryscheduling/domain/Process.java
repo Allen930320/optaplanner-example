@@ -1,16 +1,17 @@
 package com.example.factoryscheduling.domain;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import org.hibernate.annotations.GenericGenerator;
 import org.optaplanner.core.api.domain.entity.PlanningEntity;
 import org.optaplanner.core.api.domain.lookup.PlanningId;
 import org.optaplanner.core.api.domain.variable.PlanningVariable;
+import org.springframework.util.ObjectUtils;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "processes")
@@ -18,13 +19,14 @@ import java.util.List;
 public class Process {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "processId")
+    @GenericGenerator(name = "processId", strategy = "com.example.factoryscheduling.domain.InsertGenerator")
     @PlanningId
     private Long id;
 
     private String name;
 
-    private int processingTime;
+    private int duration;
 
     @ManyToOne
     @JoinColumn(name = "order_id")
@@ -38,18 +40,21 @@ public class Process {
     @PlanningVariable(valueRangeProviderRefs = "startTimeRange")
     private LocalDateTime startTime;
 
-    private LocalDateTime actualStartTime;
+    private LocalDateTime planStartTime;
 
     @Enumerated(EnumType.STRING)
-    private ProcessStatus status;
+    private Status status;
 
     private boolean requiresMachine;
 
-    @OneToMany(mappedBy = "current", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "previous", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<Link> link;
 
 
     public LocalDateTime getStartTime() {
+        if (ObjectUtils.isEmpty(this.startTime)) {
+            setStartTime(getPlanStartTime());
+        }
         return startTime;
     }
 
@@ -65,24 +70,15 @@ public class Process {
         this.link = link;
     }
 
-    public LocalDateTime getActualStartTime() {
-        return actualStartTime;
-    }
-
-    public void setActualStartTime(LocalDateTime actualStartTime) {
-        this.actualStartTime = actualStartTime;
-    }
-
-    public LocalDateTime getEffectiveStartTime() {
-        return actualStartTime != null ? actualStartTime : startTime;
-    }
-
     public LocalDateTime getEndTime() {
-        return getEffectiveStartTime() != null ? getEffectiveStartTime().plusMinutes(processingTime) : null;
-    }
-
-    public boolean hasStarted() {
-        return actualStartTime != null;
+        if (!ObjectUtils.isEmpty(getStartTime())) {
+            return getStartTime().plusMinutes(duration);
+        }
+        if (!ObjectUtils.isEmpty(getPlanStartTime())) {
+            return getPlanStartTime().plusMinutes(duration);
+        }
+        setStartTime(LocalDateTime.now());
+        return getStartTime().plusMinutes(duration);
     }
 
     public Long getId() {
@@ -101,12 +97,12 @@ public class Process {
         this.name = name;
     }
 
-    public int getProcessingTime() {
-        return processingTime;
+    public int getDuration() {
+        return duration;
     }
 
-    public void setProcessingTime(int processingTime) {
-        this.processingTime = processingTime;
+    public void setDuration(int processingTime) {
+        this.duration = processingTime;
     }
 
     @JsonIgnore
@@ -127,11 +123,11 @@ public class Process {
         this.machine = machine;
     }
 
-    public ProcessStatus getStatus() {
+    public Status getStatus() {
         return status;
     }
 
-    public void setStatus(ProcessStatus status) {
+    public void setStatus(Status status) {
         this.status = status;
     }
 
@@ -141,5 +137,17 @@ public class Process {
 
     public void setRequiresMachine(boolean requiresMachine) {
         this.requiresMachine = requiresMachine;
+    }
+
+    public LocalDateTime getPlanStartTime() {
+        return planStartTime;
+    }
+
+    public void setPlanStartTime(LocalDateTime planStartTime) {
+        this.planStartTime = planStartTime;
+    }
+
+    public boolean hasStarted() {
+        return Objects.nonNull(getStartTime());
     }
 }

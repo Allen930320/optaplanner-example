@@ -5,6 +5,7 @@ import com.example.factoryscheduling.domain.*;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.optaplanner.core.api.score.stream.*;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -35,7 +36,7 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     private Constraint machineCapacityConstraint(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Process.class)
                 .filter(Process::isRequiresMachine)
-                .groupBy(Process::getMachine, ConstraintCollectors.sum(Process::getProcessingTime))
+                .groupBy(Process::getMachine, ConstraintCollectors.sum(Process::getDuration))
                 .filter((machine, totalTime) -> totalTime > machine.getCapacity())
                 .penalize(HardSoftScore.ONE_HARD,
                         (machine, totalTime) -> totalTime - machine.getCapacity())
@@ -50,8 +51,8 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                 .filter(Process::isRequiresMachine)
                 .join(Machine.class, Joiners.equal(Process::getMachine, machine -> machine))
                 .filter((process, machine) ->
-                        (process.getStatus() == ProcessStatus.PROCESSING && machine.getStatus() != MachineStatus.PROCESSING) ||
-                                (process.getStatus() != ProcessStatus.PROCESSING && machine.getStatus() == MachineStatus.PROCESSING))
+                (process.getStatus() == Status.PROCESSING && machine.getStatus() != MachineStatus.PROCESSING) ||
+                        (process.getStatus() != Status.PROCESSING && machine.getStatus() == MachineStatus.PROCESSING))
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Machine status");
     }
@@ -64,9 +65,9 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                 Joiners.equal(Process::getMachine),
                 Joiners.equal(p -> p, o -> o.getOrder() != null),
                         Joiners.lessThan(p -> p.getOrder().getPriority()))
-                .filter((p1, p2) -> p1.getEffectiveStartTime().isAfter(p2.getEffectiveStartTime()))
+                .filter((p1, p2) -> p1.getStartTime().isAfter(p2.getStartTime()))
                 .penalize(HardSoftScore.ONE_SOFT,
-                        (p1, p2) -> (int) Duration.between(p2.getEffectiveStartTime(), p1.getEffectiveStartTime()).toMinutes())
+                        (p1, p2) -> (int) Duration.between(p2.getStartTime(), p1.getStartTime()).toMinutes())
                 .asConstraint("Order priority");
     }
 
@@ -112,9 +113,9 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     private Constraint respectActualStartTimes(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Process.class)
                 .filter(Process::hasStarted)
-                .filter(process -> !process.getStartTime().equals(process.getActualStartTime()))
+                .filter(process -> !process.getPlanStartTime().equals(process.getStartTime()))
                 .penalize(HardSoftScore.ONE_HARD,
-                        process -> (int) Duration.between(process.getActualStartTime(), process.getStartTime()).toMinutes())
+                        process -> (int) Duration.between(process.getStartTime(), process.getStartTime()).toMinutes())
                 .asConstraint("Respect actual start times");
     }
 
@@ -149,14 +150,14 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
         return constraintFactory.forEach(Process.class)
                 .filter(process -> !CollectionUtils.isEmpty(process.getLink()))
                 .penalize(HardSoftScore.ONE_HARD, process -> {
-                    if (CollectionUtils.isEmpty(process.getLink()) || process.getEffectiveStartTime() == null) {
+                    if (CollectionUtils.isEmpty(process.getLink()) || process.getStartTime() == null) {
                         return 0;
                     }
                     LocalDateTime end = process.getLink().stream().map(Link::getNext)
                             .map(Process::getEndTime).max(LocalDateTime::compareTo)
                             .orElse(LocalDateTime.now());
                     LocalDateTime effect =
-                            process.getEffectiveStartTime();
+                            process.getStartTime();
                     long overlap = Duration.between(end, effect).toMinutes();
                     return overlap < 0 ? (int) -overlap : 0; // 只在重叠时惩罚
                 })
@@ -170,13 +171,13 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
         return constraintFactory.forEach(Process.class)
                 .filter(process -> !CollectionUtils.isEmpty(process.getLink()))
                 .penalize(HardSoftScore.ONE_SOFT, process -> {
-                    if (CollectionUtils.isEmpty(process.getLink()) || process.getEffectiveStartTime() == null) {
+                    if (CollectionUtils.isEmpty(process.getLink()) || process.getStartTime() == null) {
                         return 0;
                     }
                     LocalDateTime next = process.getLink().stream().map(Link::getNext)
-                            .map(Process::getEffectiveStartTime).max(LocalDateTime::compareTo)
+                            .map(Process::getStartTime).max(LocalDateTime::compareTo)
                             .orElse(LocalDateTime.now());
-                    LocalDateTime previous = process.getEffectiveStartTime();
+                    LocalDateTime previous = process.getStartTime();
                     return (int) Math.abs(
                             Duration.between(previous, next)
                                     .toMinutes());
@@ -191,16 +192,15 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
         return constraintFactory.forEach(Order.class)
                 .penalize(HardSoftScore.ONE_SOFT, order -> {
                     Process lastProcesses = findLastProcesses(order.getStartProcess());
-                    if (order.getPlannedStartTime() == null) {
+                    if (ObjectUtils.isEmpty(order.getStartProcess()) || ObjectUtils.isEmpty(order.getStartProcess().getStartTime())) {
                         return 0; // 如果没有最后的工序或时间未设置，不进行惩罚
                     }
                     LocalDateTime latestEndTime = lastProcesses.getEndTime();
                     if (latestEndTime == null) {
                         return 0;
                     }
-                    Long duration = Duration.between(order.getPlannedStartTime(), latestEndTime).toMinutes();
+                    long duration = Duration.between(order.getStartProcess().getStartTime(), latestEndTime).toMinutes();
                     if (duration < 0) {
-                        order.setPlannedStartTime(latestEndTime);
                         return 0;
                     }
                     return Math.toIntExact(duration);

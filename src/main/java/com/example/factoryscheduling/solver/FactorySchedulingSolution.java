@@ -1,7 +1,9 @@
 package com.example.factoryscheduling.solver;
 
-import com.example.factoryscheduling.domain.*;
+import com.example.factoryscheduling.domain.Machine;
+import com.example.factoryscheduling.domain.Order;
 import com.example.factoryscheduling.domain.Process;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.optaplanner.core.api.domain.solution.PlanningEntityCollectionProperty;
 import org.optaplanner.core.api.domain.solution.PlanningScore;
 import org.optaplanner.core.api.domain.solution.PlanningSolution;
@@ -9,6 +11,7 @@ import org.optaplanner.core.api.domain.solution.ProblemFactCollectionProperty;
 import org.optaplanner.core.api.domain.valuerange.ValueRangeProvider;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.optaplanner.core.api.solver.SolverStatus;
+import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,12 +24,13 @@ public class FactorySchedulingSolution {
     @ValueRangeProvider(id = "machineRange")
     private List<Machine> machines;
 
-    @PlanningEntityCollectionProperty
+    @ProblemFactCollectionProperty
     private List<Order> orders;
 
     @ValueRangeProvider(id = "processRange")
+    @PlanningEntityCollectionProperty
     private List<Process> processes;
-//
+
 //    @ProblemFactCollectionProperty
 //    private List<MachineMaintenance> maintenances;
 
@@ -38,7 +42,13 @@ public class FactorySchedulingSolution {
 
     @ValueRangeProvider(id = "startTimeRange")
     public List<LocalDateTime> getStartTimeRange() {
-         return processes.stream().map(Process::getStartTime).collect(Collectors.toList());
+        return processes.stream().map(p -> {
+            if (!ObjectUtils.isEmpty(p.getStartTime())) {
+                return p.getStartTime();
+            } else {
+                return p.getPlanStartTime();
+            }
+        }).collect(Collectors.toList());
     }
     // 无参构造函数，OptaPlanner需要
     public FactorySchedulingSolution() {
@@ -69,6 +79,7 @@ public class FactorySchedulingSolution {
         this.orders = orders;
     }
 
+    @JsonIgnore
     public List<Process> getProcesses() {
         return processes;
     }
