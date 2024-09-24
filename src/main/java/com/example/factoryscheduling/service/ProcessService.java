@@ -65,26 +65,6 @@ public class ProcessService {
     }
 
     @Transactional
-    public Process updateProcess(Long id, Process processDetails) {
-        return processRepository.findById(id)
-                .map(existingProcess -> {
-                    existingProcess.setName(processDetails.getName());
-                    existingProcess.setDuration(processDetails.getDuration());
-                    existingProcess.setOrder(processDetails.getOrder());
-                    existingProcess.setMachine(processDetails.getMachine());
-                    existingProcess.setStartTime(processDetails.getStartTime());
-                    existingProcess.setStatus(processDetails.getStatus());
-                    existingProcess.setRequiresMachine(processDetails.isRequiresMachine());
-
-                    // 更新工序链接
-                    processLinkService.updateProcessLinks(existingProcess, processDetails.getLink());
-
-                    return processRepository.save(existingProcess);
-                })
-                .orElseThrow(() -> new RuntimeException("Process not found with id " + id));
-    }
-
-    @Transactional
     public Process update(Process process) {
         return processRepository.save(process);
     }

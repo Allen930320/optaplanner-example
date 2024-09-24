@@ -4,8 +4,13 @@ import org.hibernate.annotations.GenericGenerator;
 import org.optaplanner.core.api.domain.entity.PlanningEntity;
 import org.optaplanner.core.api.domain.lookup.PlanningId;
 import org.optaplanner.core.api.domain.variable.PlanningVariable;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -26,6 +31,31 @@ public class Order {
     @PlanningVariable(valueRangeProviderRefs = {"processRange"})
     @JoinColumn(name = "start_process_id")
     private Process startProcess;
+
+
+    public List<LocalDateTime> getStartTimeRange() {
+        return getStartDate(this.startProcess, new ArrayList<>());
+    }
+
+    private List<LocalDateTime> getStartDate(Process process, List<LocalDateTime> starts) {
+        if (ObjectUtils.isEmpty(process)) {
+            return starts;
+        }
+        LocalDateTime start = process.getStartTime();
+        if (ObjectUtils.isEmpty(start)) {
+            start = process.getPlanStartTime();
+        }
+        starts.add(start);
+        if (!CollectionUtils.isEmpty(process.getLink())) {
+            for (Link link : process.getLink()) {
+                Process next = link.getNext();
+                if (!ObjectUtils.isEmpty(next)) {
+                    getStartDate(next, starts);
+                }
+            }
+        }
+        return starts;
+    }
 
     public Long getId() {
         return id;

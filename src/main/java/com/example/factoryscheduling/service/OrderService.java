@@ -107,4 +107,8 @@ public class OrderService {
     public void updateAll(List<Order> orders){
         orderRepository.saveAll(orders);
     }
+
+    public Optional<Order> findById(Long id) {
+        return orderRepository.findById(id);
+    }
 }

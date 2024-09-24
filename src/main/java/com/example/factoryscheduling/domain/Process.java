@@ -50,11 +50,12 @@ public class Process {
     @OneToMany(mappedBy = "previous", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<Link> link;
 
+    @ElementCollection
+    @Column
+    private List<Integer> procedure;
+
 
     public LocalDateTime getStartTime() {
-        if (ObjectUtils.isEmpty(this.startTime)) {
-            setStartTime(getPlanStartTime());
-        }
         return startTime;
     }
 
@@ -71,14 +72,7 @@ public class Process {
     }
 
     public LocalDateTime getEndTime() {
-        if (!ObjectUtils.isEmpty(getStartTime())) {
-            return getStartTime().plusMinutes(duration);
-        }
-        if (!ObjectUtils.isEmpty(getPlanStartTime())) {
-            return getPlanStartTime().plusMinutes(duration);
-        }
-        setStartTime(LocalDateTime.now());
-        return getStartTime().plusMinutes(duration);
+        return ObjectUtils.isEmpty(this.startTime) ? null : this.startTime.plusMinutes(this.duration);
     }
 
     public Long getId() {
@@ -149,5 +143,13 @@ public class Process {
 
     public boolean hasStarted() {
         return Objects.nonNull(getStartTime());
+    }
+
+    public List<Integer> getProcedure() {
+        return procedure;
+    }
+
+    public void setProcedure(List<Integer> procedure) {
+        this.procedure = procedure;
     }
 }

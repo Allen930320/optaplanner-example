@@ -2,6 +2,7 @@ package com.example.factoryscheduling.solver;
 
 import com.example.factoryscheduling.domain.Process;
 import com.example.factoryscheduling.domain.*;
+import lombok.extern.slf4j.Slf4j;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.optaplanner.core.api.score.stream.*;
 import org.springframework.util.CollectionUtils;
@@ -11,24 +12,94 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 public class FactorySchedulingConstraintProvider implements ConstraintProvider {
 
     @Override
     public Constraint[] defineConstraints(ConstraintFactory constraintFactory) {
         return new Constraint[] {
-                machineCapacityConstraint(constraintFactory),
-                machineStatusConstraint(constraintFactory),
-                orderPriorityConstraint(constraintFactory),
-                processSequenceConstraint(constraintFactory),
-                        minimizeMakeSpan(constraintFactory),
-                preventMaintenanceMachineAssignment(constraintFactory),
-                preferIdleMachines(constraintFactory),
-                preventUnnecessaryMachineAssignment(constraintFactory),
-                respectActualStartTimes(constraintFactory),
-                parallelProcessConstraint(constraintFactory),
-                        // avoidMaintenanceOverlap(constraintFactory)
+                sequentialProcesses(constraintFactory)
         };
     }
+
+
+    // 约束1: 顺序工序必须按顺序进行
+    Constraint sequentialProcesses(ConstraintFactory factory) {
+        return factory.forEach(Process.class)
+                .join(Link.class, Joiners.equal(p->p, Link::getPrevious))
+                .penalize(HardSoftScore.ONE_HARD,
+                        (process, link) -> {
+                            int duration = (int) Duration.between(process.getEndTime(), link.getNext().getStartTime())
+                                    .toMinutes();
+                            if (duration < 0) {
+                                link.getNext().setStartTime(process.getEndTime());
+                                log.info("{}->{},start:{},duration:{}, next start:{}", process.getId(),
+                                        link.getNext().getId(),
+                                        process.getStartTime(), process.getDuration(), link.getNext().getStartTime());
+                                return 0;
+                            }
+                            log.info("{}->{},start:{},duration:{}, next start:{}", process.getId(),
+                                    link.getNext().getId(),
+                                    process.getStartTime(), process.getDuration(), link.getNext().getStartTime());
+                            return duration;
+                        })
+                .asConstraint("Sequential processes");
+    }
+
+
+
+    // 约束2: 并行工序可以同时进行
+    Constraint parallelProcesses(ConstraintFactory factory) {
+        return factory.forEach(Process.class)
+                .join(Link.class)
+                .filter((p, l) -> !CollectionUtils.isEmpty(p.getLink()) && p.getLink().size() > 1)
+                .filter((process, link) -> process.getStartTime() != null
+                        && link.getNext().getStartTime() != null
+                        && !process.getStartTime().equals(link.getNext().getStartTime()))
+                .penalize(HardSoftScore.ONE_SOFT,
+                        (process, link) -> (int) Math.abs(Duration
+                                .between(process.getStartTime(), link.getNext().getStartTime()).toMinutes()))
+                .asConstraint("Parallel processes");
+    }
+
+    // 约束3: 机器冲突
+    Constraint machineConflict(ConstraintFactory factory) {
+        return factory.forEachUniquePair(Process.class, Joiners.equal(Process::getMachine, Process::getMachine)
+                .and(Joiners.overlapping(Process::getStartTime, Process::getEndTime)))
+                .penalize(HardSoftScore.ONE_HARD,
+                        (p1, p2) -> (int) Duration.between(
+                                p1.getStartTime().isBefore(p2.getStartTime()) ? p2.getStartTime() : p1.getStartTime(),
+                                p1.getEndTime().isAfter(p2.getEndTime()) ? p2.getEndTime() : p1.getEndTime())
+                                .toMinutes())
+                .asConstraint("Machine conflict");
+    }
+
+    // 约束4: 尊重计划开始时间
+    Constraint respectPlanStartTime(ConstraintFactory factory) {
+        return factory.forEach(Process.class)
+                .filter(p -> p.getStartTime() != null && p.getPlanStartTime() != null)
+                .penalize(HardSoftScore.ONE_SOFT,
+                        p -> (int) Math.abs(Duration.between(p.getStartTime(), p.getPlanStartTime()).toMinutes()))
+                .asConstraint("Respect plan start time");
+    }
+
+    // 约束6: 鼓励提前计划开始时间
+    Constraint earlierPlanStartTime(ConstraintFactory factory) {
+        return factory.forEach(Process.class)
+                .filter(p -> p.getStartTime() != null)
+                .reward(HardSoftScore.ONE_SOFT,
+                        p -> {
+                            LocalDateTime now = LocalDateTime.now();
+                            int duration = (int) Duration.between(now, p.getPlanStartTime()).toMinutes();
+                            if (duration > 0) {
+                                int hours = duration / 60;
+                                p.setStartTime(p.getPlanStartTime().minusHours(hours / 2));
+                            }
+                            return duration;
+                        })
+                .asConstraint("Earlier plan start time");
+    }
+
 
     /**
      * 机器容量约束：确保每台机器的总处理量不超过其容量
@@ -36,10 +107,10 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     private Constraint machineCapacityConstraint(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Process.class)
                 .filter(Process::isRequiresMachine)
-                .groupBy(Process::getMachine, ConstraintCollectors.sum(Process::getDuration))
-                .filter((machine, totalTime) -> totalTime > machine.getCapacity())
+                .groupBy(Process::getMachine, ConstraintCollectors.count())
+                .filter((machine, total) -> total > machine.getCapacity())
                 .penalize(HardSoftScore.ONE_HARD,
-                        (machine, totalTime) -> totalTime - machine.getCapacity())
+                        (machine, total) -> total - machine.getCapacity())
                 .asConstraint("Machine capacity");
     }
 
@@ -148,20 +219,17 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
      */
     private Constraint processSequenceConstraint(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Process.class)
-                .filter(process -> !CollectionUtils.isEmpty(process.getLink()))
-                .penalize(HardSoftScore.ONE_HARD, process -> {
-                    if (CollectionUtils.isEmpty(process.getLink()) || process.getStartTime() == null) {
-                        return 0;
+                .join(Link.class)
+                .filter(((process, link) -> process.equals(link.getPrevious())))
+                .penalize(HardSoftScore.ONE_HARD, (previous, link) -> {
+                    Process next = link.getNext();
+                    int duration = (int) Duration.between(previous.getEndTime(), next.getStartTime()).toMinutes();
+                    if (duration < 0) {
+                        next.setStartTime(next.getStartTime().plusMinutes(duration));
                     }
-                    LocalDateTime end = process.getLink().stream().map(Link::getNext)
-                            .map(Process::getEndTime).max(LocalDateTime::compareTo)
-                            .orElse(LocalDateTime.now());
-                    LocalDateTime effect =
-                            process.getStartTime();
-                    long overlap = Duration.between(end, effect).toMinutes();
-                    return overlap < 0 ? (int) -overlap : 0; // 只在重叠时惩罚
-                })
-                .asConstraint("Process sequence");
+                    duration= (int) Duration.between(previous.getEndTime(), next.getStartTime()).toMinutes();
+                    return duration;
+                }).asConstraint("Process sequence");
     }
 
     /**

@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.optaplanner.core.api.score.ScoreExplanation;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.optaplanner.core.api.solver.SolutionManager;
+import org.optaplanner.core.api.solver.SolverJob;
 import org.optaplanner.core.api.solver.SolverManager;
 import org.optaplanner.core.api.solver.SolverStatus;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,32 +15,57 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import javax.transaction.Transactional;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 public class SchedulingService {
 
-    private final OrderService orderService;
-    private final ProcessService processService;
-    private final MachineService machineService;
-    private final MachineMaintenanceService maintenanceService;
-    private final SolverManager<FactorySchedulingSolution, Long> solverManager;
-    private final SolutionManager<FactorySchedulingSolution, HardSoftScore> solutionManager;
+    private OrderService orderService;
+    private ProcessService processService;
+    private MachineService machineService;
+    private MachineMaintenanceService maintenanceService;
+    private SolverManager<FactorySchedulingSolution, Long> solverManager;
+    private SolutionManager<FactorySchedulingSolution, HardSoftScore> solutionManager;
+
+    private LinkService linkService;
 
     @Autowired
-    public SchedulingService(OrderService orderService,
-            ProcessService processService,
-            MachineService machineService,
-            MachineMaintenanceService maintenanceService,
-            SolverManager<FactorySchedulingSolution, Long> solverManager,
-            SolutionManager<FactorySchedulingSolution, HardSoftScore> solutionManager) {
+    public void setLinkService(LinkService linkService) {
+        this.linkService = linkService;
+    }
+
+    @Autowired
+    public void setOrderService(OrderService orderService) {
         this.orderService = orderService;
+    }
+
+    @Autowired
+    public void setProcessService(ProcessService processService) {
         this.processService = processService;
+    }
+
+    @Autowired
+    public void setMachineService(MachineService machineService) {
         this.machineService = machineService;
+    }
+
+    @Autowired
+    public void setMaintenanceService(MachineMaintenanceService maintenanceService) {
         this.maintenanceService = maintenanceService;
+    }
+
+    @Autowired
+    public void setSolverManager(SolverManager<FactorySchedulingSolution, Long> solverManager) {
         this.solverManager = solverManager;
+    }
+
+    @Autowired
+    public void setSolutionManager(SolutionManager<FactorySchedulingSolution, HardSoftScore> solutionManager) {
         this.solutionManager = solutionManager;
     }
 
@@ -48,7 +74,24 @@ public class SchedulingService {
      * @param problemId 问题ID
      */
     public void startScheduling(Long problemId) {
-        solverManager.solveAndListen(problemId, this::loadProblem, this::saveSolution);
+        FactorySchedulingSolution problem = loadProblem(problemId);
+        SolverJob<FactorySchedulingSolution, Long> solverJob = solverManager.solveAndListen(
+                problemId,
+                id -> problem,
+                solution -> {
+                    // 每次找到更好的解决方案时调用
+                    System.out.println("New best solution found: " + solution.getScore());
+                    // 这里可以更新UI或数据库
+                    saveSolution(solution);
+                },
+                finalBestSolution -> {
+                    // 求解完成时调用
+                    System.out.println("Solving finished. Best score: " + finalBestSolution);
+                    saveSolution(finalBestSolution);
+                    // 这里可以保存最终结果
+                },
+                (id, throwable) -> {
+                });
     }
 
 
@@ -68,13 +111,10 @@ public class SchedulingService {
      * @return 当前最佳解决方案
      */
     public FactorySchedulingSolution getBestSolution(Long problemId) {
-        return Optional.ofNullable(solverManager.getSolverStatus(problemId))
-                .map(status -> {
-                    FactorySchedulingSolution solution = loadProblem(problemId);
-                    solutionManager.update(solution);
-                    solution.setSolverStatus(status);
-                    return solution;
-                }).orElse(new FactorySchedulingSolution());
+        FactorySchedulingSolution solution = getFinalBestSolution();
+        SolverStatus solverStatus = solverManager.getSolverStatus(problemId);
+        solution.setSolverStatus(solverStatus);
+        return solution;
     }
 
 
@@ -104,11 +144,14 @@ public class SchedulingService {
      */
     private FactorySchedulingSolution loadProblem(Long id) {
         List<Order> orders = orderService.getAllOrders();
-        List<Process> processes =
-                orders.stream().map(this::findAllOrderProcess).flatMap(List::stream).distinct().collect(Collectors.toList());
+        List<Process> processes = orders.stream().map(this::findAllOrderProcess).flatMap(List::stream).distinct().collect(Collectors.toList());
         List<Machine> machines = processes.stream().map(Process::getMachine).distinct().collect(Collectors.toList());
+        List<Link> linkList = processes.stream().map(Process::getLink).flatMap(List::stream).distinct().collect(Collectors.toList());
         List<MachineMaintenance> maintenances = maintenanceService.getAllMaintenances();
-        return new FactorySchedulingSolution(orders, processes, machines);
+        FactorySchedulingSolution solution = new FactorySchedulingSolution(orders, processes, machines);
+        solution.setLinks(linkList);
+        solution.setLinks(linkService.findAll());
+        return solution;
     }
 
     /**
@@ -117,7 +160,6 @@ public class SchedulingService {
      */
     @Transactional
     public void saveSolution(FactorySchedulingSolution solution) {
-        log.info("save result:{}", solution.getScore().toShortString());
         orderService.updateAll(solution.getOrders());
         processService.updateAll(solution.getProcesses());
         machineService.updateAll(solution.getMachines());

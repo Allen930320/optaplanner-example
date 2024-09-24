@@ -1,9 +1,11 @@
 package com.example.factoryscheduling.solver;
 
+import com.example.factoryscheduling.domain.Link;
 import com.example.factoryscheduling.domain.Machine;
 import com.example.factoryscheduling.domain.Order;
 import com.example.factoryscheduling.domain.Process;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.hibernate.annotations.ForeignKey;
 import org.optaplanner.core.api.domain.solution.PlanningEntityCollectionProperty;
 import org.optaplanner.core.api.domain.solution.PlanningScore;
 import org.optaplanner.core.api.domain.solution.PlanningSolution;
@@ -22,6 +24,7 @@ public class FactorySchedulingSolution {
 
     @ProblemFactCollectionProperty
     @ValueRangeProvider(id = "machineRange")
+    @JsonIgnore
     private List<Machine> machines;
 
     @ProblemFactCollectionProperty
@@ -34,6 +37,9 @@ public class FactorySchedulingSolution {
 //    @ProblemFactCollectionProperty
 //    private List<MachineMaintenance> maintenances;
 
+    @ProblemFactCollectionProperty
+    @JsonIgnore
+    private List<Link> links;
 
     @PlanningScore
     private HardSoftScore score;
@@ -41,6 +47,7 @@ public class FactorySchedulingSolution {
     private SolverStatus solverStatus;;
 
     @ValueRangeProvider(id = "startTimeRange")
+    @JsonIgnore
     public List<LocalDateTime> getStartTimeRange() {
         return processes.stream().map(p -> {
             if (!ObjectUtils.isEmpty(p.getStartTime())) {
@@ -104,4 +111,11 @@ public class FactorySchedulingSolution {
         this.solverStatus = solverStatus;
     }
 
+    public List<Link> getLinks() {
+        return links;
+    }
+
+    public void setLinks(List<Link> links) {
+        this.links = links;
+    }
 }

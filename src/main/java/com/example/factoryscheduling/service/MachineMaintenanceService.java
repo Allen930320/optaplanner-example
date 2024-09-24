@@ -6,6 +6,7 @@ import com.example.factoryscheduling.repository.MachineMaintenanceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -21,11 +22,11 @@ public class MachineMaintenanceService {
         this.machineService = machineService;
     }
 
-    public MachineMaintenance scheduleMaintenance(Long machineId, LocalDateTime startTime, LocalDateTime endTime, String description) {
+    public MachineMaintenance scheduleMaintenance(Long machineId, LocalDate date, int duration, String description) {
         Machine machine = machineService.getMachineById(machineId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid machine ID"));
 
-        MachineMaintenance maintenance = new MachineMaintenance(machine, startTime, endTime, description);
+        MachineMaintenance maintenance = new MachineMaintenance(machine, date, duration, description);
         return maintenanceRepository.save(maintenance);
     }
 
@@ -33,8 +34,8 @@ public class MachineMaintenanceService {
         maintenanceRepository.deleteById(maintenanceId);
     }
 
-    public List<MachineMaintenance> getMaintenanceSchedule(Long machineId, LocalDateTime start, LocalDateTime end) {
-        return maintenanceRepository.findByMachineIdAndStartTimeBetween(machineId, start, end);
+    public List<MachineMaintenance> getMaintenanceSchedule(Long machineId, LocalDate localDate) {
+        return maintenanceRepository.findByMachineIdAndDate(machineId, localDate);
     }
 
     public List<MachineMaintenance> getAllMaintenances() {

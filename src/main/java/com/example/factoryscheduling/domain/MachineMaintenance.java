@@ -1,7 +1,7 @@
 package com.example.factoryscheduling.domain;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "machine_maintenances")
@@ -16,18 +16,19 @@ public class MachineMaintenance {
     @org.hibernate.annotations.ForeignKey(name = "none")
     private Machine machine;
 
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    private LocalDate date;
+    //每天工作时间
+    private int duration;
     private String description;
 
     // Constructors, getters, and setters
 
     public MachineMaintenance() {}
 
-    public MachineMaintenance(Machine machine, LocalDateTime startTime, LocalDateTime endTime, String description) {
+    public MachineMaintenance(Machine machine, LocalDate date, int duration, String description) {
         this.machine = machine;
-        this.startTime = startTime;
-        this.endTime = endTime;
+        this.date = date;
+        this.duration = duration;
         this.description = description;
     }
 
@@ -49,20 +50,20 @@ public class MachineMaintenance {
         this.machine = machine;
     }
 
-    public LocalDateTime getStartTime() {
-        return startTime;
+    public LocalDate getDate() {
+        return date;
     }
 
-    public void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime;
+    public void setDate(LocalDate date) {
+        this.date = date;
     }
 
-    public LocalDateTime getEndTime() {
-        return endTime;
+    public int getDuration() {
+        return duration;
     }
 
-    public void setEndTime(LocalDateTime endTime) {
-        this.endTime = endTime;
+    public void setDuration(int duration) {
+        this.duration = duration;
     }
 
     public String getDescription() {
