@@ -1,5 +1,7 @@
 package com.example.factoryscheduling.domain;
 
+import org.optaplanner.core.api.domain.lookup.PlanningId;
+
 import javax.persistence.*;
 import java.time.LocalDate;
 
@@ -9,27 +11,32 @@ public class MachineMaintenance {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @PlanningId
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "machine_id", nullable = false)
-    @org.hibernate.annotations.ForeignKey(name = "none")
-    private Machine machine;
+    private String machineNo;
 
     private LocalDate date;
-    //每天工作时间
+
     private int duration;
+
+    private int capacity;
+
+    @Enumerated(EnumType.STRING)
+    private MachineStatus status;
+
     private String description;
 
     // Constructors, getters, and setters
 
     public MachineMaintenance() {}
 
-    public MachineMaintenance(Machine machine, LocalDate date, int duration, String description) {
-        this.machine = machine;
+    public MachineMaintenance(String machineNo, LocalDate date, int capacity, String description) {
+        this.machineNo = machineNo;
         this.date = date;
-        this.duration = duration;
+        this.capacity = capacity;
         this.description = description;
+        this.status = MachineStatus.IDLE;
     }
 
     // Getters and setters
@@ -42,13 +49,14 @@ public class MachineMaintenance {
         this.id = id;
     }
 
-    public Machine getMachine() {
-        return machine;
+    public String getMachineNo() {
+        return machineNo;
     }
 
-    public void setMachine(Machine machine) {
-        this.machine = machine;
+    public void setMachineNo(String machineNo) {
+        this.machineNo = machineNo;
     }
+
 
     public LocalDate getDate() {
         return date;
@@ -72,5 +80,21 @@ public class MachineMaintenance {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
+    }
+
+    public MachineStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(MachineStatus status) {
+        this.status = status;
     }
 }

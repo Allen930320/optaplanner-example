@@ -1,5 +1,7 @@
 package com.example.factoryscheduling.domain;
 
+import org.optaplanner.core.api.domain.lookup.PlanningId;
+
 import javax.persistence.*;
 
 @Entity
@@ -7,14 +9,12 @@ import javax.persistence.*;
 public class Machine {
 
     @Id
+    @PlanningId
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String name;
+    private String machineNo;
     private String model;
-    private int capacity;
-    @Enumerated(EnumType.STRING)
-    private MachineStatus status;
 
 
     public Long getId() {
@@ -41,19 +41,11 @@ public class Machine {
         this.model = model;
     }
 
-    public int getCapacity() {
-        return capacity;
+    public String getMachineNo() {
+        return machineNo;
     }
 
-    public void setCapacity(int capacity) {
-        this.capacity = capacity;
-    }
-
-    public MachineStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(MachineStatus status) {
-        this.status = status;
+    public void setMachineNo(String machineNo) {
+        this.machineNo = machineNo;
     }
 }

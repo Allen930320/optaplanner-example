@@ -37,8 +37,6 @@ public class MachineService {
             Machine existingMachine = machine.get();
             existingMachine.setName(machineDetails.getName());
             existingMachine.setModel(machineDetails.getModel());
-            existingMachine.setCapacity(machineDetails.getCapacity());
-            existingMachine.setStatus(machineDetails.getStatus());
             return machineRepository.save(existingMachine);
         }
         return null;

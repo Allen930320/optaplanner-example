@@ -5,11 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
 public interface MachineMaintenanceRepository extends JpaRepository<MachineMaintenance, Long> {
-    List<MachineMaintenance> findByMachineIdAndDate(Long machineId, LocalDate date);
+    List<MachineMaintenance> findByMachineNoAndDate(String machineNo, LocalDate date);
 
 }

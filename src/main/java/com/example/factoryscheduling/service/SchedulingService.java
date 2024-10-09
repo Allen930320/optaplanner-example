@@ -1,8 +1,12 @@
 package com.example.factoryscheduling.service;
 
-import com.example.factoryscheduling.domain.Process;
-import com.example.factoryscheduling.domain.*;
-import com.example.factoryscheduling.solver.FactorySchedulingSolution;
+import com.example.factoryscheduling.domain.Machine;
+import com.example.factoryscheduling.domain.MachineMaintenance;
+import com.example.factoryscheduling.domain.Order;
+import com.example.factoryscheduling.domain.Procedure;
+import com.example.factoryscheduling.repository.OrderSolutionRepository;
+import com.example.factoryscheduling.solution.FactorySchedulingSolution;
+import com.example.factoryscheduling.solution.OrderSolution;
 import lombok.extern.slf4j.Slf4j;
 import org.optaplanner.core.api.score.ScoreExplanation;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
@@ -12,13 +16,11 @@ import org.optaplanner.core.api.solver.SolverManager;
 import org.optaplanner.core.api.solver.SolverStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
 import javax.transaction.Transactional;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,17 +28,18 @@ import java.util.stream.Collectors;
 public class SchedulingService {
 
     private OrderService orderService;
-    private ProcessService processService;
+    private ProcedureService processService;
     private MachineService machineService;
     private MachineMaintenanceService maintenanceService;
     private SolverManager<FactorySchedulingSolution, Long> solverManager;
     private SolutionManager<FactorySchedulingSolution, HardSoftScore> solutionManager;
 
-    private LinkService linkService;
+
+    private OrderSolutionRepository orderSolutionRepository;
 
     @Autowired
-    public void setLinkService(LinkService linkService) {
-        this.linkService = linkService;
+    public void setOrderSolutionRepository(OrderSolutionRepository orderSolutionRepository) {
+        this.orderSolutionRepository = orderSolutionRepository;
     }
 
     @Autowired
@@ -45,7 +48,7 @@ public class SchedulingService {
     }
 
     @Autowired
-    public void setProcessService(ProcessService processService) {
+    public void setProcessService(ProcedureService processService) {
         this.processService = processService;
     }
 
@@ -144,14 +147,28 @@ public class SchedulingService {
      */
     private FactorySchedulingSolution loadProblem(Long id) {
         List<Order> orders = orderService.getAllOrders();
-        List<Process> processes = orders.stream().map(this::findAllOrderProcess).flatMap(List::stream).distinct().collect(Collectors.toList());
-        List<Machine> machines = processes.stream().map(Process::getMachine).distinct().collect(Collectors.toList());
-        List<Link> linkList = processes.stream().map(Process::getLink).flatMap(List::stream).distinct().collect(Collectors.toList());
+        List<Procedure> processes = processService.findAll();
+        List<Machine> machines = machineService.getAllMachines();
         List<MachineMaintenance> maintenances = maintenanceService.getAllMaintenances();
-        FactorySchedulingSolution solution = new FactorySchedulingSolution(orders, processes, machines);
-        solution.setLinks(linkList);
-        solution.setLinks(linkService.findAll());
-        return solution;
+        List<OrderSolution> solutions =
+                orders.stream().map(o -> getOrderSolution(o, processes, machines))
+                        .flatMap(List::stream).collect(Collectors.toList());
+        return new FactorySchedulingSolution(solutions, orders, machines, processes, maintenances);
+    }
+
+    private List<OrderSolution> getOrderSolution(Order order, List<Procedure> procedures, List<Machine> machines) {
+        String orderNo = order.getOrderNo();
+        List<OrderSolution> solutions = new ArrayList<>();
+        List<Procedure> procedureList =
+                procedures.stream().filter(p -> p.getOrderNo().equals(orderNo)).collect(Collectors.toList());
+        Map<String, Machine> machineMap =
+                machines.stream().collect(Collectors.toMap(Machine::getMachineNo, m -> m, (m1, m2) -> m1));
+        for (Procedure procedure : procedureList) {
+            String machineNo = procedure.getMachineNo();
+            Machine machine = machineMap.get(machineNo);
+            solutions.add(new OrderSolution(order, procedure, machine));
+        }
+        return orderSolutionRepository.saveAll(solutions);
     }
 
     /**
@@ -160,37 +177,19 @@ public class SchedulingService {
      */
     @Transactional
     public void saveSolution(FactorySchedulingSolution solution) {
-        orderService.updateAll(solution.getOrders());
-        processService.updateAll(solution.getProcesses());
-        machineService.updateAll(solution.getMachines());
+        orderSolutionRepository.saveAll(solution.getSolutions());
     }
-
     public FactorySchedulingSolution getFinalBestSolution() {
+        List<OrderSolution> solutions = orderSolutionRepository.findAll();
         List<Order> orders = orderService.getAllOrders();
-        List<Process> processes =
-                orders.stream().map(this::findAllOrderProcess).flatMap(List::stream).distinct().collect(Collectors.toList());
-        List<Machine> machines = processes.stream().map(Process::getMachine).collect(Collectors.toList());
+        List<Procedure> procedures = processService.findAll();
+        List<Machine> machines = machineService.getAllMachines();
         List<MachineMaintenance> maintenances = maintenanceService.getAllMaintenances();
-        return new FactorySchedulingSolution(orders, processes, machines);
+        return new FactorySchedulingSolution(solutions, orders, machines, procedures, maintenances);
     }
 
-    private List<Process> findAllOrderProcess(Order order) {
-        Set<Process> processes = new HashSet<>();
-        Process startProcess = order.getStartProcess();
-        findAllProcesses(startProcess, processes);
-        return new ArrayList<>(processes);
-    }
-
-
-    private void findAllProcesses(Process process, Set<Process> processes) {
-        processes.add(process);
-        List<Link> nextLinks = process.getLink();
-        if (CollectionUtils.isEmpty(nextLinks) || nextLinks.size() == 0) {
-            return;
-        }
-        for (Link link:nextLinks){
-            findAllProcesses(link.getNext(),processes);
-        }
+    private List<Procedure> findAllOrderProcess(Order order) {
+        return new ArrayList<>();
     }
 
     /**

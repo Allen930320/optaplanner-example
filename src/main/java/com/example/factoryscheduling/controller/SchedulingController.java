@@ -1,7 +1,7 @@
 package com.example.factoryscheduling.controller;
 
 import com.example.factoryscheduling.service.SchedulingService;
-import com.example.factoryscheduling.solver.FactorySchedulingSolution;
+import com.example.factoryscheduling.solution.FactorySchedulingSolution;
 import org.optaplanner.core.api.score.ScoreExplanation;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.springframework.beans.factory.annotation.Autowired;

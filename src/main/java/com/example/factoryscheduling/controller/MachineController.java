@@ -32,13 +32,8 @@ public class MachineController {
     }
 
     @PostMapping
-    public ResponseEntity<Machine> createMachine(@RequestBody Machine machine) {
-        return ResponseEntity.ok(machineService.createMachine(machine));
-    }
-    @PostMapping("/createMachines")
     public ResponseEntity<List<Machine>> createMachines(@RequestBody List<Machine> machines) {
-        machineService.create(machines);
-        return ResponseEntity.ok(machines);
+        return ResponseEntity.ok(machineService.create(machines));
     }
 
     @PutMapping("/{id}")
