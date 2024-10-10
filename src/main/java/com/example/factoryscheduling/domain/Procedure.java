@@ -5,7 +5,6 @@ import org.optaplanner.core.api.domain.lookup.PlanningId;
 
 import javax.persistence.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -25,9 +24,6 @@ public class Procedure {
 
     private int duration;
 
-    @OneToMany
-    private List<Timeslot> timeslots;
-
     private String procedureNo;
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -35,7 +31,7 @@ public class Procedure {
 
     private LocalDate startTime;
 
-    private LocalDateTime planStartTime;
+    private LocalDate planStartTime;
 
     @Enumerated(EnumType.STRING)
     private Status status;
@@ -80,11 +76,11 @@ public class Procedure {
         this.status = status;
     }
 
-    public LocalDateTime getPlanStartTime() {
+    public LocalDate getPlanStartTime() {
         return planStartTime;
     }
 
-    public void setPlanStartTime(LocalDateTime planStartTime) {
+    public void setPlanStartTime(LocalDate planStartTime) {
         this.planStartTime = planStartTime;
     }
 
@@ -120,11 +116,4 @@ public class Procedure {
         return procedureNo;
     }
 
-    public List<Timeslot> getTimeslots() {
-        return timeslots;
-    }
-
-    public void setTimeslots(List<Timeslot> timeslots) {
-        this.timeslots = timeslots;
-    }
 }

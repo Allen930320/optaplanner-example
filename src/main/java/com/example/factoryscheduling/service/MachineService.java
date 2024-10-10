@@ -54,4 +54,8 @@ public class MachineService {
         machineRepository.saveAll(machines);
         return machines;
     }
+
+    public Machine findFirstByMachineNo(String machineNo){
+        return machineRepository.findFirstByMachineNo(machineNo);
+    }
 }

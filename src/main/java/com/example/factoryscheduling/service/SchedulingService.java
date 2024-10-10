@@ -1,12 +1,8 @@
 package com.example.factoryscheduling.service;
 
-import com.example.factoryscheduling.domain.Machine;
-import com.example.factoryscheduling.domain.MachineMaintenance;
-import com.example.factoryscheduling.domain.Order;
-import com.example.factoryscheduling.domain.Procedure;
-import com.example.factoryscheduling.repository.OrderSolutionRepository;
+import com.example.factoryscheduling.domain.*;
+import com.example.factoryscheduling.repository.TimeslotRepository;
 import com.example.factoryscheduling.solution.FactorySchedulingSolution;
-import com.example.factoryscheduling.solution.OrderSolution;
 import lombok.extern.slf4j.Slf4j;
 import org.optaplanner.core.api.score.ScoreExplanation;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
@@ -20,8 +16,6 @@ import org.springframework.stereotype.Service;
 import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -33,13 +27,11 @@ public class SchedulingService {
     private MachineMaintenanceService maintenanceService;
     private SolverManager<FactorySchedulingSolution, Long> solverManager;
     private SolutionManager<FactorySchedulingSolution, HardSoftScore> solutionManager;
-
-
-    private OrderSolutionRepository orderSolutionRepository;
+    private TimeslotRepository timeslotRepository;
 
     @Autowired
-    public void setOrderSolutionRepository(OrderSolutionRepository orderSolutionRepository) {
-        this.orderSolutionRepository = orderSolutionRepository;
+    public void setTimeslotRepository(TimeslotRepository timeslotRepository) {
+        this.timeslotRepository = timeslotRepository;
     }
 
     @Autowired
@@ -150,26 +142,10 @@ public class SchedulingService {
         List<Procedure> processes = processService.findAll();
         List<Machine> machines = machineService.getAllMachines();
         List<MachineMaintenance> maintenances = maintenanceService.getAllMaintenances();
-        List<OrderSolution> solutions =
-                orders.stream().map(o -> getOrderSolution(o, processes, machines))
-                        .flatMap(List::stream).collect(Collectors.toList());
-        return new FactorySchedulingSolution(solutions, orders, machines, processes, maintenances);
+        List<Timeslot> timeslots =timeslotRepository.findAll();
+        return new FactorySchedulingSolution(timeslots, orders, machines, processes, maintenances);
     }
 
-    private List<OrderSolution> getOrderSolution(Order order, List<Procedure> procedures, List<Machine> machines) {
-        String orderNo = order.getOrderNo();
-        List<OrderSolution> solutions = new ArrayList<>();
-        List<Procedure> procedureList =
-                procedures.stream().filter(p -> p.getOrderNo().equals(orderNo)).collect(Collectors.toList());
-        Map<String, Machine> machineMap =
-                machines.stream().collect(Collectors.toMap(Machine::getMachineNo, m -> m, (m1, m2) -> m1));
-        for (Procedure procedure : procedureList) {
-            String machineNo = procedure.getMachineNo();
-            Machine machine = machineMap.get(machineNo);
-            solutions.add(new OrderSolution(order, procedure, machine));
-        }
-        return orderSolutionRepository.saveAll(solutions);
-    }
 
     /**
      * 保存解决方案
@@ -177,15 +153,16 @@ public class SchedulingService {
      */
     @Transactional
     public void saveSolution(FactorySchedulingSolution solution) {
-        orderSolutionRepository.saveAll(solution.getSolutions());
+        timeslotRepository.saveAll(solution.getTimeslots());
     }
+
     public FactorySchedulingSolution getFinalBestSolution() {
-        List<OrderSolution> solutions = orderSolutionRepository.findAll();
+        List<Timeslot> timeslots = timeslotRepository.findAll();
         List<Order> orders = orderService.getAllOrders();
         List<Procedure> procedures = processService.findAll();
         List<Machine> machines = machineService.getAllMachines();
         List<MachineMaintenance> maintenances = maintenanceService.getAllMaintenances();
-        return new FactorySchedulingSolution(solutions, orders, machines, procedures, maintenances);
+        return new FactorySchedulingSolution(timeslots, orders, machines, procedures, maintenances);
     }
 
     private List<Procedure> findAllOrderProcess(Order order) {

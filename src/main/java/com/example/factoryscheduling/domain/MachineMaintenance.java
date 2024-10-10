@@ -1,5 +1,7 @@
 package com.example.factoryscheduling.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.optaplanner.core.api.domain.lookup.PlanningId;
 
 import javax.persistence.*;
@@ -14,7 +16,8 @@ public class MachineMaintenance {
     @PlanningId
     private Long id;
 
-    private String machineNo;
+    @OneToOne
+    private Machine machine;
 
     private LocalDate date;
 
@@ -31,8 +34,8 @@ public class MachineMaintenance {
 
     public MachineMaintenance() {}
 
-    public MachineMaintenance(String machineNo, LocalDate date, int capacity, String description) {
-        this.machineNo = machineNo;
+    public MachineMaintenance(Machine machine, LocalDate date, int capacity, String description) {
+        this.machine = machine;
         this.date = date;
         this.capacity = capacity;
         this.description = description;
@@ -49,14 +52,13 @@ public class MachineMaintenance {
         this.id = id;
     }
 
-    public String getMachineNo() {
-        return machineNo;
+    public Machine getMachine() {
+        return machine;
     }
 
-    public void setMachineNo(String machineNo) {
-        this.machineNo = machineNo;
+    public void setMachine(Machine machine) {
+        this.machine = machine;
     }
-
 
     public LocalDate getDate() {
         return date;

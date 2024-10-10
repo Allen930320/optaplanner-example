@@ -10,4 +10,6 @@ import java.util.List;
 public interface MachineRepository extends JpaRepository<Machine,Long> {
     @Override
     List<Machine> findAll();
+
+    Machine findFirstByMachineNo(String machineNo);
 }

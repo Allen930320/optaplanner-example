@@ -12,14 +12,11 @@ import java.util.Optional;
 @Service
 public class OrderService {
 
-    private final OrderRepository orderRepository;
-    private final ProcedureService processService;
-
+    private OrderRepository orderRepository;
 
     @Autowired
-    public OrderService(OrderRepository orderRepository, ProcedureService processService) {
+    public void setOrderRepository(OrderRepository orderRepository) {
         this.orderRepository = orderRepository;
-        this.processService = processService;
     }
 
     public List<Order> getAllOrders() {
@@ -30,6 +27,9 @@ public class OrderService {
         return orderRepository.findById(id);
     }
 
+    public Order findFirstByOrderNo(String orderNo) {
+        return orderRepository.findFirstByOrderNo(orderNo);
+    }
     @Transactional
     public Order createOrder(Order order) {
         return orderRepository.save(order);

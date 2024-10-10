@@ -30,7 +30,7 @@ public class MachineMaintenanceService {
     public MachineMaintenance scheduleMaintenance(Long machineId, LocalDate date, int duration, String description) {
         Machine machine = machineService.getMachineById(machineId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid machine ID"));
-        MachineMaintenance maintenance = new MachineMaintenance(machine.getMachineNo(), date, duration, description);
+        MachineMaintenance maintenance = new MachineMaintenance(machine, date, duration, description);
         return maintenanceRepository.save(maintenance);
     }
 
@@ -45,11 +45,11 @@ public class MachineMaintenanceService {
     }
 
     @Transactional
-    public List<MachineMaintenance> autoCreateMaintenance(String machineNo) {
+    public List<MachineMaintenance> autoCreateMaintenance(Machine machine) {
         LocalDate now = LocalDate.now();
         List<MachineMaintenance> maintenances = new ArrayList<>();
         for (int i = 1; i <= 180; i++) {
-            MachineMaintenance maintenance = new MachineMaintenance(machineNo, now.plusDays(i), 80, null);
+            MachineMaintenance maintenance = new MachineMaintenance(machine, now.plusDays(i), 80, null);
             maintenances.add(maintenance);
         }
         return saveAll(maintenances);
@@ -59,7 +59,7 @@ public class MachineMaintenanceService {
         List<Machine> machines = machineService.getAllMachines();
         List<MachineMaintenance> maintenances = new ArrayList<>();
         for (Machine machine : machines) {
-            maintenances.addAll(autoCreateMaintenance(machine.getMachineNo()));
+            maintenances.addAll(autoCreateMaintenance(machine));
         }
         return maintenances;
     }
@@ -68,8 +68,8 @@ public class MachineMaintenanceService {
         maintenanceRepository.deleteById(maintenanceId);
     }
 
-    public List<MachineMaintenance> getMaintenanceSchedule(String machineNo, LocalDate localDate) {
-        return maintenanceRepository.findByMachineNoAndDate(machineNo, localDate);
+    public List<MachineMaintenance> getMaintenanceSchedule(Machine machine, LocalDate localDate) {
+        return maintenanceRepository.findByMachineAndDate(machine, localDate);
     }
 
     public List<MachineMaintenance> getAllMaintenances() {

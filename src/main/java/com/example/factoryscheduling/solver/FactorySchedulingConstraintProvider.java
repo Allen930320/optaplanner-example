@@ -1,17 +1,17 @@
 package com.example.factoryscheduling.solver;
 
-import com.example.factoryscheduling.domain.Machine;
-import com.example.factoryscheduling.domain.Order;
-import com.example.factoryscheduling.domain.Procedure;
-import com.example.factoryscheduling.solution.OrderSolution;
+import com.example.factoryscheduling.domain.*;
 import lombok.extern.slf4j.Slf4j;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.optaplanner.core.api.score.stream.Constraint;
 import org.optaplanner.core.api.score.stream.ConstraintFactory;
 import org.optaplanner.core.api.score.stream.ConstraintProvider;
+import org.optaplanner.core.api.score.stream.Joiners;
 import org.springframework.hateoas.Link;
+import org.springframework.util.CollectionUtils;
 
 import java.time.Duration;
+import java.util.Objects;
 
 @Slf4j
 public class FactorySchedulingConstraintProvider implements ConstraintProvider {
@@ -19,15 +19,25 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     @Override
     public Constraint[] defineConstraints(ConstraintFactory constraintFactory) {
         return new Constraint[] {
-                sequentialProcesses(constraintFactory)
+                        sequentialProcesses(constraintFactory),
+                        machineCapacityConstraint(constraintFactory)
         };
     }
 
 
     // 约束1: 顺序工序必须按顺序进行
     Constraint sequentialProcesses(ConstraintFactory factory) {
-        return factory.forEach(OrderSolution.class)
-                .join(Order.class)
+        return factory.forEach(Timeslot.class)
+                .join(factory.forEach(Timeslot.class))
+                .filter((left, right) -> {
+                    Order leftOrder = left.getOrder();
+                    Order rightOrder = right.getOrder();
+                    Procedure leftProcedure = left.getProcedure();
+                    Procedure rightProcedure = right.getProcedure();
+                    return Objects.equals(leftOrder.getOrderNo(), rightOrder.getOrderNo()) &&
+                            (CollectionUtils.isEmpty(leftProcedure.getNextProcedureNo())
+                                    && leftProcedure.getNextProcedureNo().contains(rightProcedure.getProcedureNo()));
+                })
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Sequential processes");
     }
@@ -71,7 +81,10 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
      * 机器容量约束：确保每台机器的总处理量不超过其容量
      */
     private Constraint machineCapacityConstraint(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(Procedure.class)
+        return constraintFactory.forEach(MachineMaintenance.class)
+                .join(Timeslot.class,
+                        Joiners.equal(m -> m.getMachine().getMachineNo(), timeslot -> timeslot.getProcedure().getMachineNo()),
+                        Joiners.equal(m -> m.getMachine().getMachineNo(), t -> t.getMachine().getMachineNo()))
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Machine capacity");
     }

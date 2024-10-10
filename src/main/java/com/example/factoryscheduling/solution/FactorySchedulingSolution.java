@@ -1,9 +1,7 @@
 package com.example.factoryscheduling.solution;
 
-import com.example.factoryscheduling.domain.Machine;
-import com.example.factoryscheduling.domain.MachineMaintenance;
-import com.example.factoryscheduling.domain.Order;
-import com.example.factoryscheduling.domain.Procedure;
+import com.example.factoryscheduling.domain.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.optaplanner.core.api.domain.solution.PlanningEntityCollectionProperty;
 import org.optaplanner.core.api.domain.solution.PlanningScore;
 import org.optaplanner.core.api.domain.solution.PlanningSolution;
@@ -19,22 +17,26 @@ public class FactorySchedulingSolution {
 
 
     @PlanningEntityCollectionProperty
-    private List<OrderSolution> solutions;
+    private List<Timeslot> timeslots;
 
     @ProblemFactCollectionProperty
     @ValueRangeProvider(id = "orderRange")
+    @JsonIgnore
     private List<Order> orders;
 
     @ProblemFactCollectionProperty
     @ValueRangeProvider(id = "machineRange")
+    @JsonIgnore
     private List<Machine> machines;
 
     @ValueRangeProvider(id = "procedureRange")
     @ProblemFactCollectionProperty
+    @JsonIgnore
     private List<Procedure> procedures;
 
-    @ValueRangeProvider(id = "maintenanceRangeProvider")
+    @ValueRangeProvider(id = "maintenanceRange")
     @ProblemFactCollectionProperty
+    @JsonIgnore
     private List<MachineMaintenance> maintenanceRange;
 
     @PlanningScore
@@ -46,20 +48,21 @@ public class FactorySchedulingSolution {
     public FactorySchedulingSolution() {
     }
 
-    public FactorySchedulingSolution(List<OrderSolution> solutions, List<Order> orders, List<Machine> machines, List<Procedure> procedures, List<MachineMaintenance> maintenances) {
-        this.solutions = solutions;
+    public FactorySchedulingSolution(List<Timeslot> timeslots, List<Order> orders, List<Machine> machines,
+                                     List<Procedure> procedures, List<MachineMaintenance> maintenances) {
+        this.timeslots = timeslots;
         this.orders = orders;
         this.machines = machines;
         this.procedures = procedures;
         this.maintenanceRange = maintenances;
     }
 
-    public List<OrderSolution> getSolutions() {
-        return solutions;
+    public List<Timeslot> getTimeslots() {
+        return timeslots;
     }
 
-    public void setSolutions(List<OrderSolution> solutions) {
-        this.solutions = solutions;
+    public void setTimeslots(List<Timeslot> timeslots) {
+        this.timeslots = timeslots;
     }
 
     public List<Order> getOrders() {

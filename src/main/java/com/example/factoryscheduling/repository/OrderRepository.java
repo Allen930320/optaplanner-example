@@ -10,4 +10,6 @@ import java.util.List;
 public interface OrderRepository extends JpaRepository<Order, Long> {
     @Override
     List<Order> findAll();
+
+    Order findFirstByOrderNo(String orderNo);
 }
