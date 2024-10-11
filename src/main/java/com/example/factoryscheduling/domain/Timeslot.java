@@ -19,15 +19,12 @@ public class Timeslot {
     private Long id;
 
     @OneToOne
-    @PlanningVariable(valueRangeProviderRefs = "procedureRange")
     private Procedure procedure;
 
     @OneToOne
-    @PlanningVariable(valueRangeProviderRefs = "orderRange")
     private Order order;
 
     @OneToOne
-    @PlanningVariable(valueRangeProviderRefs = "machineRange")
     private Machine machine;
 
     @OneToOne

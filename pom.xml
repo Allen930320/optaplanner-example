@@ -61,7 +61,6 @@
         <dependency>
             <groupId>org.optaplanner</groupId>
             <artifactId>optaplanner-test</artifactId>
-
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -107,11 +106,9 @@
                 <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>com.example.factoryscheduling.ExampleApplication</mainClass>
-                    <skip>true</skip>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>repackage</id>
                         <goals>
                             <goal>repackage</goal>
                         </goals>

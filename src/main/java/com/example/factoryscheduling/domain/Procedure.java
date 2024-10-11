@@ -2,6 +2,7 @@ package com.example.factoryscheduling.domain;
 
 import org.hibernate.annotations.GenericGenerator;
 import org.optaplanner.core.api.domain.lookup.PlanningId;
+import org.optaplanner.core.api.domain.variable.PlanningVariable;
 
 import javax.persistence.*;
 import java.time.LocalDate;
@@ -24,25 +25,19 @@ public class Procedure {
 
     private int duration;
 
-    private String procedureNo;
+    private Integer procedureNo;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    private List<String> nextProcedureNo;
+    private List<Integer> nextProcedureNo;
 
-    private LocalDate startTime;
+    private LocalDate startDate;
 
-    private LocalDate planStartTime;
+    private LocalDate planStartDate;
+
+    private LocalDate planEndDate;
 
     @Enumerated(EnumType.STRING)
     private Status status;
-
-    public LocalDate getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(LocalDate startTime) {
-        this.startTime = startTime;
-    }
 
     public Long getId() {
         return id;
@@ -76,25 +71,6 @@ public class Procedure {
         this.status = status;
     }
 
-    public LocalDate getPlanStartTime() {
-        return planStartTime;
-    }
-
-    public void setPlanStartTime(LocalDate planStartTime) {
-        this.planStartTime = planStartTime;
-    }
-
-    public void setProcedureNo(String procedureNo) {
-        this.procedureNo = procedureNo;
-    }
-
-    public List<String> getNextProcedureNo() {
-        return nextProcedureNo;
-    }
-
-    public void setNextProcedureNo(List<String> nextProcedureNo) {
-        this.nextProcedureNo = nextProcedureNo;
-    }
 
     public String getOrderNo() {
         return orderNo;
@@ -112,8 +88,43 @@ public class Procedure {
         this.machineNo = machineNo;
     }
 
-    public String getProcedureNo() {
+    public Integer getProcedureNo() {
         return procedureNo;
     }
 
+    public void setProcedureNo(Integer procedureNo) {
+        this.procedureNo = procedureNo;
+    }
+
+    public List<Integer> getNextProcedureNo() {
+        return nextProcedureNo;
+    }
+
+    public void setNextProcedureNo(List<Integer> nextProcedureNo) {
+        this.nextProcedureNo = nextProcedureNo;
+    }
+
+    public LocalDate getPlanEndDate() {
+        return planEndDate;
+    }
+
+    public void setPlanEndDate(LocalDate planEndDate) {
+        this.planEndDate = planEndDate;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDate getPlanStartDate() {
+        return planStartDate;
+    }
+
+    public void setPlanStartDate(LocalDate planStartDate) {
+        this.planStartDate = planStartDate;
+    }
 }

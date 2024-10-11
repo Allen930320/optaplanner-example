@@ -56,14 +56,12 @@ public class ProcedureService {
             for (Procedure procedure : value) {
                 long id = procedure.getId();
                 int procedureNo = (int) (id % 10) * 10;
-                procedure.setProcedureNo(Integer.toString(procedureNo));
+                procedure.setProcedureNo(procedureNo);
                 if (procedureNo != size * 10) {
-                    String[] next = new String[] {Integer.toString(procedureNo + 10)};
-                    procedure.setNextProcedureNo(Arrays.asList(next));
+                    procedure.setNextProcedureNo(List.of(procedureNo + 10));
                 }
                 int index = (int) (Math.random() * 100) % 5;
                 procedure.setMachineNo(machines[index]);
-                procedure.setStartTime(null);
                 newP.add(procedure);
             }
         });
@@ -87,12 +85,21 @@ public class ProcedureService {
     public void createTimeslot(Order order, Procedure procedure, Machine machine) {
         int duration = procedure.getDuration();
         List<Timeslot> timeslotList = new ArrayList<>();
-        for (int i = 0; i < duration / 10; i++) {
+        for (int i = 0; i < duration / 40; i++) {
             Timeslot timeslot = new Timeslot();
             timeslot.setMachine(machine);
             timeslot.setOrder(order);
             timeslot.setProcedure(procedure);
-            timeslot.setDailyHours(10);
+            timeslot.setDailyHours(40);
+            timeslotList.add(timeslot);
+        }
+        int time = timeslotList.stream().map(Timeslot::getDailyHours).mapToInt(m -> m).sum();
+        if (duration - time > 0) {
+            Timeslot timeslot = new Timeslot();
+            timeslot.setMachine(machine);
+            timeslot.setOrder(order);
+            timeslot.setProcedure(procedure);
+            timeslot.setDailyHours(duration-time);
             timeslotList.add(timeslot);
         }
         timeslotRepository.saveAll(timeslotList);

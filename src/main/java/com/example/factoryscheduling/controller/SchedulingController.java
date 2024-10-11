@@ -1,7 +1,9 @@
 package com.example.factoryscheduling.controller;
 
+import com.example.factoryscheduling.domain.Timeslot;
 import com.example.factoryscheduling.service.SchedulingService;
 import com.example.factoryscheduling.solution.FactorySchedulingSolution;
+import lombok.extern.slf4j.Slf4j;
 import org.optaplanner.core.api.score.ScoreExplanation;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/scheduling")
+@Slf4j
+@CrossOrigin
 public class SchedulingController {
 
     private final SchedulingService schedulingService;
@@ -34,6 +38,13 @@ public class SchedulingController {
     @GetMapping("/solution/{problemId}")
     public ResponseEntity<FactorySchedulingSolution> getBestSolution(@PathVariable Long problemId) {
         FactorySchedulingSolution solution = schedulingService.getBestSolution(problemId);
+        for (Timeslot timeslot : solution.getTimeslots()) {
+            int i=1;
+            if (timeslot.getMachine()!=null&&timeslot.getMaintenance()!=null&&
+                    !timeslot.getMachine().getMachineNo().equals(timeslot.getMaintenance().getMachine().getMachineNo())) {
+                log.info("order No:{},number:{}", timeslot.getOrder().getOrderNo(),i++);
+            }
+        }
         return ResponseEntity.ok(solution);
     }
 

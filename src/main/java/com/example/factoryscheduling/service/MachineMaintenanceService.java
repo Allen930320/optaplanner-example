@@ -48,7 +48,7 @@ public class MachineMaintenanceService {
     public List<MachineMaintenance> autoCreateMaintenance(Machine machine) {
         LocalDate now = LocalDate.now();
         List<MachineMaintenance> maintenances = new ArrayList<>();
-        for (int i = 1; i <= 180; i++) {
+        for (int i = 1; i <= 14; i++) {
             MachineMaintenance maintenance = new MachineMaintenance(machine, now.plusDays(i), 80, null);
             maintenances.add(maintenance);
         }
