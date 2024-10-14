@@ -1,14 +1,14 @@
 package com.example.factoryscheduling.domain;
 
+import com.example.factoryscheduling.solution.TimeslotVariableListener;
 import org.optaplanner.core.api.domain.entity.PlanningEntity;
 import org.optaplanner.core.api.domain.lookup.PlanningId;
+import org.optaplanner.core.api.domain.solution.PlanningEntityProperty;
 import org.optaplanner.core.api.domain.variable.PlanningVariable;
+import org.optaplanner.core.api.domain.variable.ShadowVariable;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.OneToOne;
-import java.time.LocalDate;
+import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @PlanningEntity
@@ -27,13 +27,14 @@ public class Timeslot {
     @OneToOne
     private Machine machine;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @PlanningVariable(valueRangeProviderRefs = "maintenanceRange")
     private MachineMaintenance maintenance;
 
     private int dailyHours;
 
-    private LocalDate date;
+    @ShadowVariable(variableListenerClass = TimeslotVariableListener.class ,sourceVariableName = "maintenance")
+    private LocalDateTime dateTime;
 
 
     public Long getId() {
@@ -60,12 +61,12 @@ public class Timeslot {
         this.dailyHours = dailyHours;
     }
 
-    public LocalDate getDate() {
-        return date;
+    public LocalDateTime getDateTime() {
+        return dateTime;
     }
 
-    public void setDate(LocalDate date) {
-        this.date = date;
+    public void setDateTime(LocalDateTime dateTime) {
+        this.dateTime = dateTime;
     }
 
     public Order getOrder() {

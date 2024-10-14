@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,7 +50,9 @@ public class MachineMaintenanceService {
         LocalDate now = LocalDate.now();
         List<MachineMaintenance> maintenances = new ArrayList<>();
         for (int i = 1; i <= 14; i++) {
-            MachineMaintenance maintenance = new MachineMaintenance(machine, now.plusDays(i), 80, null);
+            MachineMaintenance maintenance = new MachineMaintenance(machine, now.plusDays(i), 480, null);
+            maintenance.setStartTime(LocalTime.of(9, 0));
+            maintenance.setEndTime(maintenance.getStartTime().plusMinutes(maintenance.getCapacity()));
             maintenances.add(maintenance);
         }
         return saveAll(maintenances);

@@ -16,7 +16,6 @@ public class Machine {
     private String machineNo;
     private String model;
 
-
     public Long getId() {
         return id;
     }

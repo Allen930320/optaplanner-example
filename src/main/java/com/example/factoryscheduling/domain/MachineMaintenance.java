@@ -1,11 +1,11 @@
 package com.example.factoryscheduling.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.optaplanner.core.api.domain.lookup.PlanningId;
 
 import javax.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "machine_maintenances")
@@ -21,8 +21,6 @@ public class MachineMaintenance {
 
     private LocalDate date;
 
-    private int duration;
-
     private int capacity;
 
     @Enumerated(EnumType.STRING)
@@ -30,7 +28,11 @@ public class MachineMaintenance {
 
     private String description;
 
-    // Constructors, getters, and setters
+    private LocalTime startTime;
+
+    private LocalTime endTime;
+
+    private int duration;
 
     public MachineMaintenance() {}
 
@@ -98,5 +100,21 @@ public class MachineMaintenance {
 
     public void setStatus(MachineStatus status) {
         this.status = status;
+    }
+
+    public LocalTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public LocalTime getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(LocalTime endTime) {
+        this.endTime = endTime;
     }
 }

@@ -1,6 +1,7 @@
 package com.example.factoryscheduling.solver;
 
 import com.example.factoryscheduling.domain.Machine;
+import com.example.factoryscheduling.domain.MachineMaintenance;
 import com.example.factoryscheduling.domain.Procedure;
 import com.example.factoryscheduling.domain.Timeslot;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +14,6 @@ import org.springframework.hateoas.Link;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Comparator;
 
 import static org.optaplanner.core.api.score.stream.ConstraintCollectors.min;
@@ -58,9 +58,7 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                 Joiners.lessThan(timeslot -> timeslot.getProcedure().getProcedureNo()))
                 .filter(((timeslot, timeslot2) -> timeslot.getMaintenance().getDate()
                         .isAfter(timeslot2.getMaintenance().getDate())))
-                .penalize(HardSoftScore.ONE_HARD, ((timeslot,
-                        timeslot2) -> (int) Duration.between(timeslot2.getMaintenance().getDate().atStartOfDay(),
-                                timeslot.getMaintenance().getDate().atStartOfDay()).toDays()))
+                .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Sequential processes");
     }
 
@@ -83,9 +81,7 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                         .equals(timeslot2.getMaintenance().getDate())))
                 .filter(((timeslot, timeslot2) -> timeslot.getMaintenance().getDate()
                         .isAfter(timeslot2.getMaintenance().getDate())))
-                .penalize(HardSoftScore.ONE_HARD, ((timeslot,
-                        timeslot2) -> (int) Duration.between(timeslot2.getMaintenance().getDate().atStartOfDay(),
-                                timeslot.getMaintenance().getDate().atStartOfDay()).toDays()))
+                .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Machine conflict");
     }
 
@@ -101,9 +97,11 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     Constraint earlierPlanStartTime(ConstraintFactory factory) {
         return factory.forEach(Timeslot.class)
                 .groupBy(timeslot -> timeslot.getOrder().getOrderNo() + timeslot.getProcedure().getOrderNo(),
-                        min(t -> t.getMaintenance().getDate().atStartOfDay(),
-                                Comparator.comparingInt(LocalDateTime::getMinute)))
-                .reward(HardSoftScore.ONE_SOFT, (s, m) -> m.getMinute() - LocalDate.now().atStartOfDay().getMinute())
+                        min(timeslot -> timeslot,
+                                Comparator.comparing(
+                                        timeslot -> timeslot.getMaintenance().getDate().atStartOfDay().getMinute())))
+                .reward(HardSoftScore.ONE_SOFT, (s, timeslot) -> (int) Duration.between(LocalDate.now().atStartOfDay(),
+                        timeslot.getMaintenance().getDate().atStartOfDay()).toDays())
                 .asConstraint("Earlier plan start time");
     }
 
@@ -127,8 +125,9 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
      */
     private Constraint machineCapacityConstraint(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Timeslot.class)
-                .groupBy(Timeslot::getMaintenance, sum(Timeslot::getDailyHours))
-                .filter((maintenance, total) -> maintenance.getCapacity() > total)
+                .groupBy(timeslot -> timeslot.getMaintenance().getId(), sum(Timeslot::getDailyHours))
+                .join(MachineMaintenance.class, Joiners.equal((id, sum) -> id, MachineMaintenance::getId))
+                .filter((id, total, maintenance) -> maintenance.getCapacity() > total)
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Machine capacity");
     }

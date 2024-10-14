@@ -154,6 +154,7 @@ public class SchedulingService {
     @Transactional
     public void saveSolution(FactorySchedulingSolution solution) {
         timeslotRepository.saveAll(solution.getTimeslots());
+
     }
 
     public FactorySchedulingSolution getFinalBestSolution() {

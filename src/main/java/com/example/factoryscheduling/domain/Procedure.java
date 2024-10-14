@@ -6,6 +6,7 @@ import org.optaplanner.core.api.domain.variable.PlanningVariable;
 
 import javax.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -30,11 +31,13 @@ public class Procedure {
     @ElementCollection(fetch = FetchType.EAGER)
     private List<Integer> nextProcedureNo;
 
-    private LocalDate startDate;
-
     private LocalDate planStartDate;
 
     private LocalDate planEndDate;
+
+    private LocalDateTime startTime;
+
+    private LocalDateTime endTime;
 
     @Enumerated(EnumType.STRING)
     private Status status;
@@ -112,19 +115,27 @@ public class Procedure {
         this.planEndDate = planEndDate;
     }
 
-    public LocalDate getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(LocalDate startDate) {
-        this.startDate = startDate;
-    }
-
     public LocalDate getPlanStartDate() {
         return planStartDate;
     }
 
     public void setPlanStartDate(LocalDate planStartDate) {
         this.planStartDate = planStartDate;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public LocalDateTime getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(LocalDateTime endTime) {
+        this.endTime = endTime;
     }
 }

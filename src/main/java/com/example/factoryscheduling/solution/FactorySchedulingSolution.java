@@ -11,6 +11,7 @@ import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.optaplanner.core.api.solver.SolverStatus;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,6 +42,7 @@ public class FactorySchedulingSolution {
     @JsonIgnore
     private List<MachineMaintenance> maintenanceRange;
 
+
     @PlanningScore
     private HardSoftScore score;
 
@@ -57,10 +59,6 @@ public class FactorySchedulingSolution {
         this.machines = machines;
         this.procedures = procedures;
         this.maintenanceRange = maintenances;
-    }
-
-    public List<LocalDate> getDate(){
-        return this.maintenanceRange.stream().map(MachineMaintenance::getDate).distinct().collect(Collectors.toList());
     }
 
     public List<Timeslot> getTimeslots() {
