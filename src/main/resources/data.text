@@ -1,0 +1,520 @@
+[
+    {
+        "name": "Machine 1",
+        "model": "M1",
+        "machineNo": "01",
+        "capacity": 10,
+        "status": "IDLE"
+    },
+    {
+        "name": "Machine 2",
+        "model": "M2",
+        "machineNo": "02",
+        "capacity": 10,
+        "status": "IDLE"
+    },
+    {
+        "name": "Machine 3",
+        "model": "M3",
+        "machineNo": "03",
+        "capacity": 10,
+        "status": "IDLE"
+    },
+    {
+        "name": "Machine 4",
+        "model": "M4",
+        "machineNo": "04",
+        "capacity": 10,
+        "status": "IDLE"
+    },
+    {
+        "name": "Machine 5",
+        "model": "M5",
+        "machineNo": "05",
+        "capacity": 10,
+        "status": "IDLE"
+    }
+]
+
+
+
+
+
+
+
+[
+    {
+        "id": 1,
+        "name": "电子元件组装",
+        "orderNo": "ORD-2024-001",
+        "priority": 2,
+        "startDate": null,
+        "endDate": null
+    },
+    {
+        "id": 2,
+        "name": "机械零件加工",
+        "orderNo": "ORD-2024-002",
+        "priority": 1,
+        "startDate": null,
+        "endDate": null
+    },
+    {
+        "id": 3,
+        "name": "塑料外壳生产",
+        "orderNo": "ORD-2024-003",
+        "priority": 3,
+        "startDate": null,
+        "endDate": null
+    },
+    {
+        "id": 4,
+        "name": "金属框架焊接",
+        "orderNo": "ORD-2024-004",
+        "priority": 2,
+        "startDate": null,
+        "endDate": null
+    },
+    {
+        "id": 5,
+        "name": "电路板制造",
+        "orderNo": "ORD-2024-005",
+        "priority": 1,
+        "startDate": null,
+        "endDate": null
+    },
+    {
+        "id": 6,
+        "name": "工业传感器组装",
+        "orderNo": "ORD-2024-006",
+        "priority": 2,
+        "startDate": null,
+        "endDate": null
+    },
+    {
+        "id": 7,
+        "name": "液压系统装配",
+        "orderNo": "ORD-2024-007",
+        "priority": 1,
+        "startDate": null,
+        "endDate": null
+    },
+    {
+        "id": 8,
+        "name": "工业机器人维修",
+        "orderNo": "ORD-2024-008",
+        "priority": 3,
+        "startDate": null,
+        "endDate": null
+    },
+    {
+        "id": 9,
+        "name": "太阳能面板组装",
+        "orderNo": "ORD-2024-009",
+        "priority": 2,
+        "startDate": null,
+        "endDate": null
+    },
+    {
+        "id": 10,
+        "name": "工业冷却系统安装",
+        "orderNo": "ORD-2024-010",
+        "priority": 1,
+        "startDate": null,
+        "endDate": null
+    }
+]
+
+
+
+
+
+
+
+[
+  {
+    "id": 101,
+    "name": "元件准备",
+    "orderNo":"ORD-2024-001",
+    "machineNo":"01",
+    "duration": 120,
+    "planStartTime": "2024-10-17T08:00:00",
+    "status": "PROCESSING"
+  },
+  {
+    "id": 102,
+    "name": "PCB焊接",
+    "duration": 180,
+    "orderNo":"ORD-2024-001",
+    "machineNo":"01",
+    "planStartTime": "2024-10-17T10:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 103,
+    "name": "功能测试",
+    "duration": 90,
+    "orderNo":"ORD-2024-001",
+    "machineNo":"01",
+    "planStartTime": "2024-10-17T13:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 104,
+    "name": "包装",
+    "duration": 60,
+    "orderNo":"ORD-2024-001",
+    "machineNo":"01",
+    "planStartTime": "2024-10-17T14:30:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 201,
+    "name": "原料切割",
+    "duration": 150,
+    "orderNo":"ORD-2024-002",
+    "machineNo":"01",
+    "planStartTime": "2024-10-18T09:30:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 202,
+    "name": "机床加工",
+    "duration": 240,
+    "orderNo":"ORD-2024-002",
+    "machineNo":"01",
+    "planStartTime": "2024-10-18T12:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 203,
+    "name": "热处理",
+    "duration": 180,
+    "orderNo":"ORD-2024-002",
+    "machineNo":"01",
+    "planStartTime": "2024-10-19T08:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 204,
+    "name": "精加工",
+    "duration": 120,
+    "orderNo":"ORD-2024-002",
+    "machineNo":"01",
+    "planStartTime": "2024-10-19T11:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 205,
+    "name": "质量检测",
+    "duration": 90,
+    "orderNo":"ORD-2024-002",
+    "machineNo":"01",
+    "planStartTime": "2024-10-19T13:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 301,
+    "name": "塑料制粒",
+    "duration": 180,
+    "orderNo":"ORD-2024-003",
+    "machineNo":"01",
+    "planStartTime": "2024-10-19T07:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 302,
+    "name": "注塑成型",
+    "duration": 240,
+    "orderNo":"ORD-2024-003",
+    "machineNo":"01",
+    "planStartTime": "2024-10-19T10:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 303,
+    "name": "冷却",
+    "duration": 120,
+    "orderNo":"ORD-2024-003",
+    "machineNo":"01",
+    "planStartTime": "2024-10-19T14:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 304,
+    "name": "修边",
+    "duration": 90,
+    "orderNo":"ORD-2024-003",
+    "machineNo":"01",
+    "planStartTime": "2024-10-19T16:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 401,
+    "name": "材料裁剪",
+    "duration": 120,
+    "orderNo":"ORD-2024-004",
+    "machineNo":"01",
+    "startTime": "2024-09-20T10:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 402,
+    "name": "焊接",
+    "duration": 300,
+    "orderNo":"ORD-2024-004",
+    "machineNo":"01",
+    "startTime": "2024-09-20T12:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 403,
+    "name": "打磨",
+    "duration": 180,
+    "orderNo":"ORD-2024-004",
+    "machineNo":"01",
+    "startTime": "2024-09-21T08:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 404,
+    "name": "喷漆",
+    "duration": 240,
+    "orderNo":"ORD-2024-004",
+    "machineNo":"01",
+    "startTime": "2024-09-21T11:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 501,
+    "name": "PCB设计",
+    "duration": 240,
+    "orderNo":"ORD-2024-005",
+    "machineNo":"01",
+    "startTime": "2024-09-21T08:30:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 502,
+    "name": "电路蚀刻",
+    "duration": 180,
+    "orderNo":"ORD-2024-005",
+    "machineNo":"01",
+    "startTime": "2024-09-21T12:30:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 503,
+    "name": "元件焊接",
+    "duration": 300,
+    "orderNo":"ORD-2024-005",
+    "machineNo":"01",
+    "startTime": "2024-09-22T08:30:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 504,
+    "name": "功能测试",
+    "duration": 120,
+    "orderNo":"ORD-2024-005",
+    "machineNo":"01",
+    "startTime": "2024-09-22T13:30:00",
+    "status": "PENDING"
+  }, {
+    "id": 601,
+    "name": "传感器校准",
+    "duration": 180,
+    "orderNo":"ORD-2024-006",
+    "machineNo":"01",
+    "startTime": "2024-09-22T09:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 602,
+    "name": "电路组装",
+    "duration": 240,
+    "orderNo":"ORD-2024-006",
+    "machineNo":"01",
+    "startTime": "2024-09-22T12:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 603,
+    "name": "外壳安装",
+    "duration": 120,
+    "orderNo":"ORD-2024-006",
+    "machineNo":"01",
+    "startTime": "2024-09-23T08:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 604,
+    "name": "功能测试",
+    "duration": 150,
+    "orderNo":"ORD-2024-006",
+    "machineNo":"01",
+    "startTime": "2024-09-23T10:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 701,
+    "name": "管道加工",
+    "duration": 210,
+    "orderNo":"ORD-2024-007",
+    "machineNo":"01",
+    "startTime": "2024-09-23T07:30:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 702,
+    "name": "阀门组装",
+    "duration": 180,
+    "orderNo":"ORD-2024-007",
+    "machineNo":"01",
+    "startTime": "2024-09-23T11:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 703,
+    "name": "泵体安装",
+    "duration": 240,
+    "orderNo":"ORD-2024-007",
+    "machineNo":"01",
+    "startTime": "2024-09-23T14:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 704,
+    "name": "系统集成",
+    "duration": 300,
+    "orderNo":"ORD-2024-007",
+    "machineNo":"01",
+    "startTime": "2024-09-24T08:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 705,
+    "name": "压力测试",
+    "duration": 150,
+    "orderNo":"ORD-2024-007",
+    "machineNo":"01",
+    "startTime": "2024-09-24T13:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 801,
+    "name": "故障诊断",
+    "duration": 120,
+    "orderNo":"ORD-2024-008",
+    "machineNo":"01",
+    "startTime": "2024-09-24T08:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 802,
+    "name": "零件更换",
+    "duration": 240,
+    "orderNo":"ORD-2024-008",
+    "machineNo":"01",
+    "status": "PENDING"
+  },
+  {
+    "id": 803,
+    "name": "系统校准",
+    "duration": 180,
+    "orderNo":"ORD-2024-008",
+    "machineNo":"01",
+    "status": "PENDING"
+  },
+  {
+    "id": 804,
+    "name": "功能测试",
+    "duration": 150,
+    "orderNo":"ORD-2024-008",
+    "machineNo":"01",
+    "status": "PENDING"
+  },
+  {
+    "id": 901,
+    "name": "电池制造",
+    "duration": 300,
+    "orderNo":"ORD-2024-009",
+    "machineNo":"01",
+    "status": "PENDING"
+  },
+  {
+    "id": 902,
+    "name": "面板组装",
+    "duration": 240,
+    "orderNo":"ORD-2024-009",
+    "machineNo":"01",
+    "status": "PENDING"
+  },
+  {
+    "id": 903,
+    "name": "电路连接",
+    "duration": 180,
+    "orderNo":"ORD-2024-009",
+    "machineNo":"01",
+    "status": "PENDING"
+  },
+  {
+    "id": 904,
+    "name": "效率测试",
+    "duration": 150,
+    "orderNo":"ORD-2024-009",
+    "machineNo":"01",
+    "status": "PENDING"
+  },
+  {
+    "id": 905,
+    "name": "防水处理",
+    "duration": 120,
+    "orderNo":"ORD-2024-009",
+    "machineNo":"01",
+    "status": "PENDING"
+  },
+  {
+    "id": 1001,
+    "name": "管道安装",
+    "duration": 240,
+    "orderNo":"ORD-2024-010",
+    "machineNo":"01",
+    "status": "PENDING"
+  },
+  {
+    "id": 1002,
+    "name": "压缩机安装",
+    "duration": 180,
+    "orderNo":"ORD-2024-010",
+    "machineNo":"01",
+    "status": "PENDING"
+  },
+  {
+    "id": 1003,
+    "name": "冷却液填充",
+    "duration": 120,
+    "orderNo":"ORD-2024-010",
+    "machineNo":"01",
+    "status": "PENDING"
+  },
+  {
+    "id": 1004,
+    "name": "系统调试",
+    "duration": 300,
+    "orderNo":"ORD-2024-010",
+    "machineNo":"01",
+    "status": "PENDING"
+  },
+  {
+    "id": 1005,
+    "name": "性能测试",
+    "duration": 180,
+    "orderNo":"ORD-2024-010",
+    "machineNo":"01",
+    "status": "PENDING"
+  }
+
+]
+
+

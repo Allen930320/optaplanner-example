@@ -60,8 +60,7 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                         (timeslot, timeslot2) -> !CollectionUtils.isEmpty(timeslot.getProcedure().getNextProcedureNo())
                                 && timeslot.getProcedure().getNextProcedureNo()
                                         .contains(timeslot2.getProcedure().getProcedureNo())))
-                .filter(((timeslot, timeslot2) -> timeslot.getMaintenance().getDate()
-                        .isAfter(timeslot2.getMaintenance().getDate())))
+                .filter(((timeslot, timeslot2) -> timeslot.getMaintenance().getDate().isAfter(timeslot2.getMaintenance().getDate())))
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Sequential processes");
     }
