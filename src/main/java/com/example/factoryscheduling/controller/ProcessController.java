@@ -1,6 +1,8 @@
 package com.example.factoryscheduling.controller;
 
 import com.example.factoryscheduling.domain.Procedure;
+import com.example.factoryscheduling.domain.Timeslot;
+import com.example.factoryscheduling.resquest.ProcedureRequest;
 import com.example.factoryscheduling.service.ProcedureService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import java.util.List;
 public class ProcessController {
 
     private ProcedureService processService;
+
 
     @Autowired
     public void setProcessService(ProcedureService processService) {

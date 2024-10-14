@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ProcedureRepository extends JpaRepository<Procedure, Long> {
 
+
+    Procedure findFirstByOrderNoAndMachineNoAndProcedureNo(String orderNo,String machineNo,Integer procedureNo);
 }

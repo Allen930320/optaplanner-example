@@ -1,6 +1,6 @@
 package com.example.factoryscheduling.repository;
 
-import com.example.factoryscheduling.domain.Timeslot;
+import com.example.factoryscheduling.domain.*;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 import java.util.List;
@@ -10,4 +10,6 @@ public interface TimeslotRepository extends PagingAndSortingRepository<Timeslot,
     @Override
     List<Timeslot> findAll();
 
+    Timeslot findFirstByOrderAndProcedureAndMachineAndMaintenance(Order order, Procedure procedure, Machine machine,
+                                                                  MachineMaintenance maintenance);
 }

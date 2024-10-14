@@ -2,7 +2,6 @@ package com.example.factoryscheduling.domain;
 
 import org.hibernate.annotations.GenericGenerator;
 import org.optaplanner.core.api.domain.lookup.PlanningId;
-import org.optaplanner.core.api.domain.variable.PlanningVariable;
 
 import javax.persistence.*;
 import java.time.LocalDate;

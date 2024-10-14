@@ -1,7 +1,9 @@
 package com.example.factoryscheduling.controller;
 
 import com.example.factoryscheduling.domain.Timeslot;
+import com.example.factoryscheduling.resquest.ProcedureRequest;
 import com.example.factoryscheduling.service.SchedulingService;
+import com.example.factoryscheduling.service.TimeslotService;
 import com.example.factoryscheduling.solution.FactorySchedulingSolution;
 import lombok.extern.slf4j.Slf4j;
 import org.optaplanner.core.api.score.ScoreExplanation;
@@ -21,6 +23,13 @@ public class SchedulingController {
     @Autowired
     public SchedulingController(SchedulingService schedulingService) {
         this.schedulingService = schedulingService;
+    }
+
+    private TimeslotService timeslotService;
+
+    @Autowired
+    public void setTimeslotService(TimeslotService timeslotService) {
+        this.timeslotService = timeslotService;
     }
 
     @PostMapping("/solve/{problemId}")
@@ -75,5 +84,11 @@ public class SchedulingController {
     @GetMapping("/explain/{problemId}")
     public ResponseEntity<ScoreExplanation<FactorySchedulingSolution,HardSoftScore>> getExplanation(@PathVariable Long problemId ){
         return ResponseEntity.ok(schedulingService.explainSolution(problemId));
+    }
+
+
+    @PostMapping("/update")
+    public ResponseEntity<Timeslot> update(@RequestBody ProcedureRequest request) {
+        return ResponseEntity.ok(timeslotService.updateTimeslot(request));
     }
 }

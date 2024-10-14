@@ -4,7 +4,6 @@ import org.optaplanner.core.api.domain.lookup.PlanningId;
 
 import javax.persistence.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
@@ -32,7 +31,7 @@ public class MachineMaintenance {
 
     private LocalTime endTime;
 
-    private int duration;
+    private int usageTime;
 
     public MachineMaintenance() {}
 
@@ -70,12 +69,12 @@ public class MachineMaintenance {
         this.date = date;
     }
 
-    public int getDuration() {
-        return duration;
+    public int getUsageTime() {
+        return usageTime;
     }
 
-    public void setDuration(int duration) {
-        this.duration = duration;
+    public void setUsageTime(int duration) {
+        this.usageTime = duration;
     }
 
     public String getDescription() {

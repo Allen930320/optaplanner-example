@@ -81,4 +81,9 @@ public class MachineMaintenanceService {
     public void updateAll(List<MachineMaintenance> maintenances){
         maintenanceRepository.saveAll(maintenances);
     }
+
+
+    public MachineMaintenance findFirstByMachineAndDate(Machine machine,LocalDate date){
+        return maintenanceRepository.findFirstByMachineAndDate(machine,date);
+    }
 }

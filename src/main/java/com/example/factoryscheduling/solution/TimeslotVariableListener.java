@@ -15,7 +15,7 @@ public class TimeslotVariableListener implements VariableListener<FactorySchedul
     public void beforeVariableChanged(ScoreDirector<FactorySchedulingSolution> scoreDirector, Timeslot timeslot) {
         MachineMaintenance maintenance = timeslot.getMaintenance();
         if (maintenance != null) {
-            maintenance.setDuration(maintenance.getDuration() - timeslot.getDailyHours());
+            maintenance.setUsageTime(maintenance.getUsageTime() - timeslot.getDailyHours());
         }
 
     }
@@ -30,12 +30,12 @@ public class TimeslotVariableListener implements VariableListener<FactorySchedul
         MachineMaintenance maintenance = timeslot.getMaintenance();
         if (maintenance != null) {
             LocalTime startTime = maintenance.getStartTime();
-            int duration = maintenance.getDuration();
+            int duration = maintenance.getUsageTime();
             duration = duration + timeslot.getDailyHours();
             scoreDirector.beforeVariableChanged(timeslot, "dateTime");
             timeslot.setDateTime(maintenance.getDate().atTime(startTime).plusMinutes(duration));
             scoreDirector.afterVariableChanged(timeslot, "dateTime");
-            maintenance.setDuration(duration);
+            maintenance.setUsageTime(duration);
         } else {
             scoreDirector.beforeVariableChanged(timeslot, "dateTime");
             timeslot.setDateTime(null);

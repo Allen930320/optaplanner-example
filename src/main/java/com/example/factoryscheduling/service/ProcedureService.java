@@ -109,4 +109,8 @@ public class ProcedureService {
         return processRepository.findAll();
     }
 
+
+    public Procedure findFirstByOrderNoAndMachineNoAndProcedureNo(String orderNo,String machineNo,Integer procedureNo){
+        return processRepository.findFirstByOrderNoAndMachineNoAndProcedureNo(orderNo,machineNo,procedureNo);
+    }
 }

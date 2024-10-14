@@ -58,7 +58,9 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                 Joiners.lessThan(timeslot -> timeslot.getProcedure().getProcedureNo()))
                 .filter(((timeslot, timeslot2) -> timeslot.getMaintenance().getDate()
                         .isAfter(timeslot2.getMaintenance().getDate())))
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardSoftScore.ONE_HARD, ((timeslot,
+                        timeslot2) -> (int) Duration.between(timeslot2.getMaintenance().getDate().atStartOfDay(),
+                                timeslot.getMaintenance().getDate().atStartOfDay()).toDays()))
                 .asConstraint("Sequential processes");
     }
 
@@ -81,7 +83,9 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                         .equals(timeslot2.getMaintenance().getDate())))
                 .filter(((timeslot, timeslot2) -> timeslot.getMaintenance().getDate()
                         .isAfter(timeslot2.getMaintenance().getDate())))
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardSoftScore.ONE_HARD, ((timeslot,
+                        timeslot2) -> (int) Duration.between(timeslot2.getMaintenance().getDate().atStartOfDay(),
+                                timeslot.getMaintenance().getDate().atStartOfDay()).toDays()))
                 .asConstraint("Machine conflict");
     }
 
@@ -128,7 +132,7 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                 .groupBy(timeslot -> timeslot.getMaintenance().getId(), sum(Timeslot::getDailyHours))
                 .join(MachineMaintenance.class, Joiners.equal((id, sum) -> id, MachineMaintenance::getId))
                 .filter((id, total, maintenance) -> maintenance.getCapacity() > total)
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardSoftScore.ONE_HARD,(id, total, maintenance) ->maintenance.getCapacity()-total)
                 .asConstraint("Machine capacity");
     }
 

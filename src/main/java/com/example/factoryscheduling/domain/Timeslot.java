@@ -3,7 +3,6 @@ package com.example.factoryscheduling.domain;
 import com.example.factoryscheduling.solution.TimeslotVariableListener;
 import org.optaplanner.core.api.domain.entity.PlanningEntity;
 import org.optaplanner.core.api.domain.lookup.PlanningId;
-import org.optaplanner.core.api.domain.solution.PlanningEntityProperty;
 import org.optaplanner.core.api.domain.variable.PlanningVariable;
 import org.optaplanner.core.api.domain.variable.ShadowVariable;
 
@@ -27,15 +26,16 @@ public class Timeslot {
     @OneToOne
     private Machine machine;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne
     @PlanningVariable(valueRangeProviderRefs = "maintenanceRange")
     private MachineMaintenance maintenance;
 
     private int dailyHours;
 
-    @ShadowVariable(variableListenerClass = TimeslotVariableListener.class ,sourceVariableName = "maintenance")
+//    @ShadowVariable(variableListenerClass = TimeslotVariableListener.class ,sourceVariableName = "maintenance")
     private LocalDateTime dateTime;
 
+    private boolean isManual;
 
     public Long getId() {
         return id;
@@ -91,5 +91,13 @@ public class Timeslot {
 
     public void setMaintenance(MachineMaintenance maintenance) {
         this.maintenance = maintenance;
+    }
+
+    public boolean isManual() {
+        return isManual;
+    }
+
+    public void setManual(boolean manual) {
+        isManual = manual;
     }
 }

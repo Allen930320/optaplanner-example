@@ -12,4 +12,5 @@ import java.util.List;
 public interface MachineMaintenanceRepository extends JpaRepository<MachineMaintenance, Long> {
     List<MachineMaintenance> findByMachineAndDate(Machine machine, LocalDate date);
 
+    MachineMaintenance findFirstByMachineAndDate(Machine machine,LocalDate date);
 }
