@@ -11,6 +11,7 @@ import org.optaplanner.core.api.score.stream.ConstraintFactory;
 import org.optaplanner.core.api.score.stream.ConstraintProvider;
 import org.optaplanner.core.api.score.stream.Joiners;
 import org.springframework.hateoas.Link;
+import org.springframework.util.CollectionUtils;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -28,9 +29,9 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                         machineConflict(constraintFactory),
                         sequentialProcesses(constraintFactory),
                         machineModelMatch(constraintFactory),
-                         machineCapacityConstraint(constraintFactory),
-                         earlierPlanStartTime(constraintFactory),
-                         minimizeMakeSpan(constraintFactory)
+                        machineCapacityConstraint(constraintFactory),
+                        earlierPlanStartTime(constraintFactory),
+                        minimizeMakeSpan(constraintFactory)
         };
     }
 
@@ -55,12 +56,13 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     // 约束1: 顺序工序必须按顺序进行
     Constraint sequentialProcesses(ConstraintFactory factory) {
         return factory.forEachUniquePair(Timeslot.class, Joiners.equal(timeslot -> timeslot.getOrder().getOrderNo()),
-                Joiners.lessThan(timeslot -> timeslot.getProcedure().getProcedureNo()))
+                Joiners.filtering(
+                        (timeslot, timeslot2) -> !CollectionUtils.isEmpty(timeslot.getProcedure().getNextProcedureNo())
+                                && timeslot.getProcedure().getNextProcedureNo()
+                                        .contains(timeslot2.getProcedure().getProcedureNo())))
                 .filter(((timeslot, timeslot2) -> timeslot.getMaintenance().getDate()
                         .isAfter(timeslot2.getMaintenance().getDate())))
-                .penalize(HardSoftScore.ONE_HARD, ((timeslot,
-                        timeslot2) -> (int) Duration.between(timeslot2.getMaintenance().getDate().atStartOfDay(),
-                                timeslot.getMaintenance().getDate().atStartOfDay()).toDays()))
+                .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Sequential processes");
     }
 
@@ -73,19 +75,13 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                 .asConstraint("Parallel processes");
     }
 
-    // 约束3: 同一台机器同一天不能被安排两次
+    // 约束3: 同天同订单同工序同机器不能同时被安排两次
     Constraint machineConflict(ConstraintFactory factory) {
-        return factory.forEachUniquePair(Timeslot.class, Joiners.equal(timeslot -> timeslot.getOrder().getOrderNo(),
-                timeslot -> timeslot.getOrder().getOrderNo()),
-                Joiners.equal(timeslot -> timeslot.getProcedure().getProcedureNo(),
-                        timeslot -> timeslot.getProcedure().getProcedureNo()))
+        return factory.forEachUniquePair(Timeslot.class, Joiners.equal(timeslot -> timeslot.getOrder().getOrderNo()),
+                Joiners.equal(timeslot -> timeslot.getProcedure().getProcedureNo()))
                 .filter(((timeslot, timeslot2) -> timeslot.getMaintenance().getDate()
                         .equals(timeslot2.getMaintenance().getDate())))
-                .filter(((timeslot, timeslot2) -> timeslot.getMaintenance().getDate()
-                        .isAfter(timeslot2.getMaintenance().getDate())))
-                .penalize(HardSoftScore.ONE_HARD, ((timeslot,
-                        timeslot2) -> (int) Duration.between(timeslot2.getMaintenance().getDate().atStartOfDay(),
-                                timeslot.getMaintenance().getDate().atStartOfDay()).toDays()))
+                .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Machine conflict");
     }
 
@@ -112,7 +108,7 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
 
     /**
      * 给机器分配工作时间
-     * 
+     *
      * @param constraintFactory
      * @return
      */
@@ -131,8 +127,8 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
         return constraintFactory.forEach(Timeslot.class)
                 .groupBy(timeslot -> timeslot.getMaintenance().getId(), sum(Timeslot::getDailyHours))
                 .join(MachineMaintenance.class, Joiners.equal((id, sum) -> id, MachineMaintenance::getId))
-                .filter((id, total, maintenance) -> maintenance.getCapacity() > total)
-                .penalize(HardSoftScore.ONE_HARD,(id, total, maintenance) ->maintenance.getCapacity()-total)
+                .filter((id, total, maintenance) -> maintenance.getCapacity() < total)
+                .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Machine capacity");
     }
 
