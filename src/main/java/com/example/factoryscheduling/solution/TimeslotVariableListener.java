@@ -45,7 +45,7 @@ public class TimeslotVariableListener implements VariableListener<FactorySchedul
 
     @Override
     public void beforeEntityAdded(ScoreDirector<FactorySchedulingSolution> scoreDirector, Timeslot timeslot) {
-
+        log.info("beforeEntityAdded");
     }
 
     @Override
@@ -55,11 +55,11 @@ public class TimeslotVariableListener implements VariableListener<FactorySchedul
 
     @Override
     public void beforeEntityRemoved(ScoreDirector<FactorySchedulingSolution> scoreDirector, Timeslot timeslot) {
-
+        log.info("beforeEntityRemoved");
     }
 
     @Override
     public void afterEntityRemoved(ScoreDirector<FactorySchedulingSolution> scoreDirector, Timeslot timeslot) {
-
+        log.info("beforeEntityRemoved");
     }
 }

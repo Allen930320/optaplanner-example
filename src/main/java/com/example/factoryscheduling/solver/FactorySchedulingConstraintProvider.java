@@ -31,6 +31,7 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                         machineModelMatch(constraintFactory),
                         machineCapacityConstraint(constraintFactory),
                         earlierPlanStartTime(constraintFactory),
+                        workingWithMaintenanceConflict(constraintFactory),
                         minimizeMakeSpan(constraintFactory)
         };
     }
@@ -56,13 +57,21 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     // 约束1: 顺序工序必须按顺序进行
     Constraint sequentialProcesses(ConstraintFactory factory) {
         return factory.forEachUniquePair(Timeslot.class, Joiners.equal(timeslot -> timeslot.getOrder().getOrderNo()),
-                Joiners.filtering(
-                        (timeslot, timeslot2) -> !CollectionUtils.isEmpty(timeslot.getProcedure().getNextProcedureNo())
-                                && timeslot.getProcedure().getNextProcedureNo()
-                                        .contains(timeslot2.getProcedure().getProcedureNo())))
-                .filter(((timeslot, timeslot2) -> timeslot.getMaintenance().getDate().isAfter(timeslot2.getMaintenance().getDate())))
+                Joiners.filtering((timeslot, timeslot2) -> !CollectionUtils.isEmpty(timeslot.getProcedure().getNextProcedureNo()) && timeslot.getProcedure().getNextProcedureNo().contains(timeslot2.getProcedure().getProcedureNo())),
+                Joiners.filtering((timeslot, timeslot2) -> timeslot.getDateTime() != null && timeslot2.getDateTime() != null))
+                .filter((timeslot, timeslot2) -> timeslot.getDateTime().isAfter(timeslot2.getDateTime()))
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Sequential processes");
+    }
+
+    Constraint workingWithMaintenanceConflict(ConstraintFactory factory) {
+        return factory.forEach(Timeslot.class)
+                .filter(timeslot -> timeslot.getDateTime() != null && Duration.between(timeslot.getDateTime(),
+                        timeslot.getMaintenance().getDate().atTime(timeslot.getMaintenance().getStartTime()))
+                        .getSeconds() > 0)
+                .filter(timeslot -> timeslot.getDateTime() != null &&  Duration.between(timeslot.getDateTime(),
+                                timeslot.getMaintenance().getDate().atTime(timeslot.getMaintenance().getEndTime())).getSeconds() <= 0)
+                .penalize(HardSoftScore.ONE_HARD).asConstraint("严格按工作日历执行工作");
     }
 
 

@@ -1,13 +1,14 @@
 package com.example.factoryscheduling.resquest;
 
-import java.time.LocalDate;
+
+import java.time.LocalDateTime;
 
 public class ProcedureRequest {
 
     private String orderNo;
     private String machineNo;
     private Integer procedureNo;
-    private LocalDate date;
+    private LocalDateTime date;
 
     public String getOrderNo() {
         return orderNo;
@@ -34,11 +35,11 @@ public class ProcedureRequest {
         this.procedureNo = procedureNo;
     }
 
-    public LocalDate getDate() {
+    public LocalDateTime getDate() {
         return date;
     }
 
-    public void setDate(LocalDate date) {
+    public void setDate(LocalDateTime date) {
         this.date = date;
     }
 }

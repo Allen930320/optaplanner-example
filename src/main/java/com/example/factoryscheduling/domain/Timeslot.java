@@ -26,13 +26,13 @@ public class Timeslot {
     @OneToOne
     private Machine machine;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @PlanningVariable(valueRangeProviderRefs = "maintenanceRange")
     private MachineMaintenance maintenance;
 
     private int dailyHours;
 
-//    @ShadowVariable(variableListenerClass = TimeslotVariableListener.class ,sourceVariableName = "maintenance")
+    @ShadowVariable(variableListenerClass = TimeslotVariableListener.class ,sourceVariableName = "maintenance")
     private LocalDateTime dateTime;
 
     private boolean isManual;

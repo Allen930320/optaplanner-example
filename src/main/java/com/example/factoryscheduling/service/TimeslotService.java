@@ -34,9 +34,10 @@ public class TimeslotService {
         Machine machine = machineService.findFirstByMachineNo(request.getMachineNo());
         Procedure procedure = procedureService.findFirstByOrderNoAndMachineNoAndProcedureNo(request.getOrderNo(),
                 request.getMachineNo(), request.getProcedureNo());
-        MachineMaintenance maintenance = maintenanceService.findFirstByMachineAndDate(machine, request.getDate());
-        Timeslot timeslot = timeslotRepository.findFirstByOrderAndProcedureAndMachineAndMaintenance(order, procedure,
-                machine, maintenance);
+        MachineMaintenance maintenance = maintenanceService.findFirstByMachineAndDate(machine, request.getDate().toLocalDate());
+        Timeslot timeslot = timeslotRepository.findFirstByOrderAndProcedureAndMachine(order, procedure,
+                machine);
+        timeslot.setMaintenance(maintenance);
         timeslot.setManual(Boolean.TRUE);
         return timeslotRepository.save(timeslot);
     }

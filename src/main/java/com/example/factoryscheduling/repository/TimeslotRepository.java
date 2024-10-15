@@ -10,6 +10,5 @@ public interface TimeslotRepository extends PagingAndSortingRepository<Timeslot,
     @Override
     List<Timeslot> findAll();
 
-    Timeslot findFirstByOrderAndProcedureAndMachineAndMaintenance(Order order, Procedure procedure, Machine machine,
-                                                                  MachineMaintenance maintenance);
+    Timeslot findFirstByOrderAndProcedureAndMachine(Order order, Procedure procedure, Machine machine);
 }

@@ -85,12 +85,12 @@ public class ProcedureService {
     public void createTimeslot(Order order, Procedure procedure, Machine machine) {
         int duration = procedure.getDuration();
         List<Timeslot> timeslotList = new ArrayList<>();
-        for (int i = 0; i < duration / 60; i++) {
+        for (int i = 0; i < duration / 480; i++) {
             Timeslot timeslot = new Timeslot();
             timeslot.setMachine(machine);
             timeslot.setOrder(order);
             timeslot.setProcedure(procedure);
-            timeslot.setDailyHours(60);
+            timeslot.setDailyHours(480);
             timeslotList.add(timeslot);
         }
         int time = timeslotList.stream().map(Timeslot::getDailyHours).mapToInt(m -> m).sum();
