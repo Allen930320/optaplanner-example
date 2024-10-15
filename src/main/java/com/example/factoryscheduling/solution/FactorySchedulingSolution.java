@@ -19,21 +19,6 @@ public class FactorySchedulingSolution {
     @PlanningEntityCollectionProperty
     private List<Timeslot> timeslots;
 
-    @ProblemFactCollectionProperty
-    @ValueRangeProvider(id = "orderRange")
-    @JsonIgnore
-    private List<Order> orders;
-
-    @ProblemFactCollectionProperty
-    @ValueRangeProvider(id = "machineRange")
-    @JsonIgnore
-    private List<Machine> machines;
-
-    @ValueRangeProvider(id = "procedureRange")
-    @ProblemFactCollectionProperty
-    @JsonIgnore
-    private List<Procedure> procedures;
-
     @ValueRangeProvider(id = "maintenanceRange")
     @ProblemFactCollectionProperty
     @JsonIgnore
@@ -52,9 +37,6 @@ public class FactorySchedulingSolution {
     public FactorySchedulingSolution(List<Timeslot> timeslots, List<Order> orders, List<Machine> machines,
                                      List<Procedure> procedures, List<MachineMaintenance> maintenances) {
         this.timeslots = timeslots;
-        this.orders = orders;
-        this.machines = machines;
-        this.procedures = procedures;
         this.maintenanceRange = maintenances;
     }
 
@@ -66,29 +48,6 @@ public class FactorySchedulingSolution {
         this.timeslots = timeslots;
     }
 
-    public List<Order> getOrders() {
-        return orders;
-    }
-
-    public void setOrders(List<Order> orders) {
-        this.orders = orders;
-    }
-
-    public List<Machine> getMachines() {
-        return machines;
-    }
-
-    public void setMachines(List<Machine> machines) {
-        this.machines = machines;
-    }
-
-    public List<Procedure> getProcedures() {
-        return procedures;
-    }
-
-    public void setProcedures(List<Procedure> procedures) {
-        this.procedures = procedures;
-    }
 
     public HardSoftScore getScore() {
         return score;

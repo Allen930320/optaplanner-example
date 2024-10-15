@@ -16,6 +16,7 @@ import org.springframework.util.CollectionUtils;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Comparator;
+import java.util.Objects;
 
 import static org.optaplanner.core.api.score.stream.ConstraintCollectors.min;
 import static org.optaplanner.core.api.score.stream.ConstraintCollectors.sum;
@@ -25,14 +26,14 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
 
     @Override
     public Constraint[] defineConstraints(ConstraintFactory constraintFactory) {
-        return new Constraint[] {
-                        machineConflict(constraintFactory),
-                        sequentialProcesses(constraintFactory),
-                        machineModelMatch(constraintFactory),
-                        machineCapacityConstraint(constraintFactory),
-                        earlierPlanStartTime(constraintFactory),
-                        // workingWithMaintenanceConflict(constraintFactory),
-                        minimizeMakeSpan(constraintFactory)
+        return new Constraint[]{
+                machineConflict(constraintFactory),
+                sequentialProcesses(constraintFactory),
+                machineModelMatch(constraintFactory),
+                machineCapacityConstraint(constraintFactory),
+                earlierPlanStartTime(constraintFactory),
+                // workingWithMaintenanceConflict(constraintFactory),
+                minimizeMakeSpan(constraintFactory)
         };
     }
 
@@ -40,18 +41,18 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     // 约束1: 顺序工序必须按顺序进行
     Constraint sequentialProcesses(ConstraintFactory factory) {
         return factory.forEachUniquePair(Timeslot.class, Joiners.equal(timeslot -> timeslot.getOrder().getId()),
-                Joiners.filtering((timeslot, timeslot2) -> !CollectionUtils.isEmpty(timeslot.getProcedure().getNextProcedureNo()) && timeslot.getProcedure().getNextProcedureNo().contains(timeslot2.getProcedure().getProcedureNo())),
-                Joiners.filtering((timeslot, timeslot2) -> timeslot.getDateTime() != null && timeslot2.getDateTime() != null))
+                        Joiners.filtering((timeslot, timeslot2) -> !CollectionUtils.isEmpty(timeslot.getProcedure().getNextProcedureNo()) && timeslot.getProcedure().getNextProcedureNo().contains(timeslot2.getProcedure().getProcedureNo())),
+                        Joiners.filtering((timeslot, timeslot2) -> timeslot.getDateTime() != null && timeslot2.getDateTime() != null))
                 .filter((timeslot, timeslot2) -> timeslot.getDateTime().isAfter(timeslot2.getDateTime()))
                 .penalize(HardSoftScore.ONE_HARD,
-                        ((timeslot, timeslot2) ->(int) Duration.between(timeslot2.getMaintenance().getDate().atStartOfDay(),timeslot.getMaintenance().getDate().atStartOfDay()).toDays()))
+                        ((timeslot, timeslot2) -> (int) Duration.between(timeslot2.getDateTime(), timeslot.getDateTime()).toDays()))
                 .asConstraint("Sequential processes");
     }
 
-     Constraint workingWithMaintenanceConflict(ConstraintFactory factory) {
-     return factory.forEachUniquePair(Timeslot.class,Joiners.equal(timeslot -> timeslot.getProcedure().getId()))
-     .penalize(HardSoftScore.ONE_HARD).asConstraint("严格按工作日历执行工作");
-     }
+    Constraint workingWithMaintenanceConflict(ConstraintFactory factory) {
+        return factory.forEachUniquePair(Timeslot.class, Joiners.equal(timeslot -> timeslot.getProcedure().getId()))
+                .penalize(HardSoftScore.ONE_HARD).asConstraint("严格按工作日历执行工作");
+    }
 
 
     // 约束2: 并行工序可以同时进行
@@ -65,7 +66,7 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     // 约束3: 同天同订单同工序同机器不能同时被安排两次
     Constraint machineConflict(ConstraintFactory factory) {
         return factory.forEachUniquePair(Timeslot.class, Joiners.equal(timeslot -> timeslot.getOrder().getOrderNo()),
-                Joiners.equal(timeslot -> timeslot.getProcedure().getProcedureNo()))
+                        Joiners.equal(timeslot -> timeslot.getProcedure().getProcedureNo()))
                 .filter(((timeslot, timeslot2) -> timeslot.getMaintenance().getDate()
                         .equals(timeslot2.getMaintenance().getDate())))
                 .penalize(HardSoftScore.ONE_HARD)
@@ -101,8 +102,7 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
      */
     private Constraint machineModelMatch(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Timeslot.class)
-                .filter(timeslot -> !timeslot.getMachine().getMachineNo()
-                        .equals(timeslot.getMaintenance().getMachine().getMachineNo()))
+                .filter(timeslot -> !Objects.equals(timeslot.getMachine().getId(), timeslot.getMaintenance().getMachine().getId()))
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Machine model mismatch");
     }
@@ -226,10 +226,11 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                         -> !timeslot.getOrder().getOrderNo().equals(timeslot2.getOrder().getOrderNo())))
                 .filter(((timeslot, timeslot2)
                         -> !timeslot.getProcedure().getProcedureNo().equals(timeslot2.getProcedure().getProcedureNo())))
-                .filter(((timeslot, timeslot2) -> timeslot.getMaintenance().getDate().isAfter(timeslot2.getMaintenance().getDate())))
+                .filter(((timeslot, timeslot2)
+                        -> timeslot.getDateTime() != null && timeslot2.getDateTime() != null && timeslot.getDateTime().plusMinutes(timeslot.getDailyHours()).isAfter(timeslot2.getDateTime())))
                 .penalize(HardSoftScore.ONE_SOFT,
-                        (timeslot, timeslot2) -> (int) Duration.between(timeslot2.getMaintenance().getDate().atStartOfDay(),
-                                timeslot.getMaintenance().getDate().atStartOfDay()).toDays())
+                        (timeslot, timeslot2) -> (int) Duration.between(timeslot2.getDateTime(),
+                                timeslot.getDateTime().plusMinutes(timeslot.getDailyHours())).toDays())
                 .asConstraint("Minimize makespan");
     }
 

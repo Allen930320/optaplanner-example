@@ -17,7 +17,7 @@ public class Timeslot {
     @Id @GeneratedValue
     private Long id;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     private Procedure procedure;
 
     @OneToOne
