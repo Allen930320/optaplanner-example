@@ -115,7 +115,7 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
 
 
     /**
-     * 给机器分配工作时间
+     * 给时间片分配机器
      *
      * @param constraintFactory
      * @return
