@@ -66,11 +66,9 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
 
     Constraint workingWithMaintenanceConflict(ConstraintFactory factory) {
         return factory.forEach(Timeslot.class)
-                .filter(timeslot -> timeslot.getDateTime() != null && Duration.between(timeslot.getDateTime(),
-                        timeslot.getMaintenance().getDate().atTime(timeslot.getMaintenance().getStartTime()))
-                        .getSeconds() > 0)
-                .filter(timeslot -> timeslot.getDateTime() != null &&  Duration.between(timeslot.getDateTime(),
-                                timeslot.getMaintenance().getDate().atTime(timeslot.getMaintenance().getEndTime())).getSeconds() <= 0)
+                .filter(timeslot -> timeslot.getDateTime() != null
+                        && timeslot.getMaintenance().getDate().atTime(timeslot.getMaintenance().getStartTime()).isAfter(timeslot.getDateTime())
+                &&timeslot.getDateTime().plusMinutes(timeslot.getDailyHours()).isAfter(timeslot.getMaintenance().getDate().atTime(timeslot.getMaintenance().getEndTime())))
                 .penalize(HardSoftScore.ONE_HARD).asConstraint("严格按工作日历执行工作");
     }
 
