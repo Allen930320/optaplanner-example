@@ -60,8 +60,7 @@ public class ProcedureService {
                 if (procedureNo != size * 10) {
                     procedure.setNextProcedureNo(List.of(procedureNo + 10));
                 }
-                int index = (int) (Math.random() * 100) % 5;
-                procedure.setMachineNo(machines[index]);
+                procedure.setMachineNo(machines[procedureNo/10-1]);
                 newP.add(procedure);
             }
         });
