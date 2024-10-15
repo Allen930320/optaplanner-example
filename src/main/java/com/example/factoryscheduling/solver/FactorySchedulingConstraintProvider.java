@@ -31,46 +31,27 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                         machineModelMatch(constraintFactory),
                         machineCapacityConstraint(constraintFactory),
                         earlierPlanStartTime(constraintFactory),
-                        workingWithMaintenanceConflict(constraintFactory),
+                        // workingWithMaintenanceConflict(constraintFactory),
                         minimizeMakeSpan(constraintFactory)
         };
     }
 
 
     // 约束1: 顺序工序必须按顺序进行
-    // Constraint sequentialProcesses(ConstraintFactory factory) {
-    // return factory.forEach(Timeslot.class)
-    // .groupBy(timeslot -> timeslot.getOrder().getOrderNo() + timeslot.getProcedure().getProcedureNo(),
-    // max(timeslot -> timeslot, Comparator.comparing(t -> t.getMaintenance().getDate())))
-    // .join(Timeslot.class,
-    // Joiners.equal((s, timeslot) -> timeslot.getOrder().getOrderNo(),
-    // timeslot2 -> timeslot2.getOrder().getOrderNo()),
-    // Joiners.lessThan((s, t1) -> t1.getProcedure().getProcedureNo(),
-    // timeslot -> timeslot.getProcedure().getProcedureNo()))
-    // .filter((s, timeslot, timeslot2) -> timeslot.getMaintenance().getDate()
-    // .isAfter(timeslot2.getMaintenance().getDate()))
-    // .penalize(HardSoftScore.ONE_HARD)
-    // .asConstraint("Sequential processes");
-    // }
-
-
-    // 约束1: 顺序工序必须按顺序进行
     Constraint sequentialProcesses(ConstraintFactory factory) {
-        return factory.forEachUniquePair(Timeslot.class, Joiners.equal(timeslot -> timeslot.getOrder().getOrderNo()),
+        return factory.forEachUniquePair(Timeslot.class, Joiners.equal(timeslot -> timeslot.getOrder().getId()),
                 Joiners.filtering((timeslot, timeslot2) -> !CollectionUtils.isEmpty(timeslot.getProcedure().getNextProcedureNo()) && timeslot.getProcedure().getNextProcedureNo().contains(timeslot2.getProcedure().getProcedureNo())),
                 Joiners.filtering((timeslot, timeslot2) -> timeslot.getDateTime() != null && timeslot2.getDateTime() != null))
                 .filter((timeslot, timeslot2) -> timeslot.getDateTime().isAfter(timeslot2.getDateTime()))
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardSoftScore.ONE_HARD,
+                        ((timeslot, timeslot2) ->(int) Duration.between(timeslot2.getMaintenance().getDate().atStartOfDay(),timeslot.getMaintenance().getDate().atStartOfDay()).toDays()))
                 .asConstraint("Sequential processes");
     }
 
-    Constraint workingWithMaintenanceConflict(ConstraintFactory factory) {
-        return factory.forEach(Timeslot.class)
-                .filter(timeslot -> timeslot.getDateTime() != null
-                        && timeslot.getMaintenance().getDate().atTime(timeslot.getMaintenance().getStartTime()).isAfter(timeslot.getDateTime())
-                &&timeslot.getDateTime().plusMinutes(timeslot.getDailyHours()).isAfter(timeslot.getMaintenance().getDate().atTime(timeslot.getMaintenance().getEndTime())))
-                .penalize(HardSoftScore.ONE_HARD).asConstraint("严格按工作日历执行工作");
-    }
+     Constraint workingWithMaintenanceConflict(ConstraintFactory factory) {
+     return factory.forEachUniquePair(Timeslot.class,Joiners.equal(timeslot -> timeslot.getProcedure().getId()))
+     .penalize(HardSoftScore.ONE_HARD).asConstraint("严格按工作日历执行工作");
+     }
 
 
     // 约束2: 并行工序可以同时进行
@@ -134,7 +115,7 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                 .groupBy(timeslot -> timeslot.getMaintenance().getId(), sum(Timeslot::getDailyHours))
                 .join(MachineMaintenance.class, Joiners.equal((id, sum) -> id, MachineMaintenance::getId))
                 .filter((id, total, maintenance) -> maintenance.getCapacity() < total)
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardSoftScore.ONE_HARD, (id, total, maintenance) -> total - maintenance.getCapacity())
                 .asConstraint("Machine capacity");
     }
 
@@ -221,7 +202,7 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     /**
      * 工序顺序约束：确保非并行工序按正确的顺序执行
      */
-    private Constraint processSequenceConstraint(ConstraintFactory constraintFactory) {
+    private Constraint procedureSequenceConstraint(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Procedure.class)
                 .join(Link.class)
                 .penalize(HardSoftScore.ONE_HARD).asConstraint("Procedure sequence");
