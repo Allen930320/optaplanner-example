@@ -9,7 +9,6 @@ import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -49,16 +48,19 @@ public class TimeslotVariableListener implements VariableListener<FactorySchedul
                             .stream().filter(t->t.getProcedure().getId().equals(timeslot.getProcedure().getId()))
                             .collect(Collectors.toList());
             LocalDateTime start = procedureTimeslots.stream().map(Timeslot::getDateTime).filter(Objects::nonNull).min(LocalDateTime::compareTo).orElse(null);
-            LocalDateTime end = procedureTimeslots.stream().map(Timeslot::getDateTime).filter(Objects::nonNull).max(LocalDateTime::compareTo).orElse(null);
+            LocalDateTime end =
+                    procedureTimeslots.stream().filter(t -> t.getDateTime() != null)
+                            .map(t -> t.getDateTime().plusMinutes(t.getDailyHours())).max(LocalDateTime::compareTo)
+                            .orElse(null);
             scoreDirector.beforeVariableChanged(timeslot, "dateTime");
             timeslot.setDateTime(maintenance.getDate().atTime(startTime).plusMinutes(duration - timeslot.getDailyHours()));
             scoreDirector.afterVariableChanged(timeslot, "dateTime");
             maintenance.setUsageTime(duration);
             if (start != null) {
-                timeslot.getProcedure().setPlanStartDate(start);
+                timeslot.getProcedure().setStartTime(start);
             }
             if (end != null) {
-                timeslot.getProcedure().setPlanEndDate(end);
+                timeslot.getProcedure().setEndTime(end);
             }
         } else {
             scoreDirector.beforeVariableChanged(timeslot, "dateTime");

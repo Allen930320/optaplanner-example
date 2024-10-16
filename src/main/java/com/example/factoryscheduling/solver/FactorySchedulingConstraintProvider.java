@@ -43,9 +43,10 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
         return factory.forEachUniquePair(Timeslot.class, Joiners.equal(timeslot -> timeslot.getOrder().getId()),
                         Joiners.filtering((timeslot, timeslot2) -> !CollectionUtils.isEmpty(timeslot.getProcedure().getNextProcedureNo()) && timeslot.getProcedure().getNextProcedureNo().contains(timeslot2.getProcedure().getProcedureNo())),
                         Joiners.filtering((timeslot, timeslot2) -> timeslot.getDateTime() != null && timeslot2.getDateTime() != null))
-                .filter((timeslot, timeslot2) -> timeslot.getDateTime().isAfter(timeslot2.getDateTime()))
+                .filter((timeslot, timeslot2) -> timeslot2.getDateTime().isBefore(timeslot.getDateTime().plusMinutes(timeslot.getDailyHours())))
                 .penalize(HardSoftScore.ONE_HARD,
-                        ((timeslot, timeslot2) -> (int) Duration.between(timeslot2.getDateTime(), timeslot.getDateTime()).toDays()))
+                        ((timeslot, timeslot2) -> (int) Duration.between(timeslot2.getDateTime(),
+                                timeslot.getDateTime().plusMinutes(timeslot.getDailyHours())).toDays()))
                 .asConstraint("Sequential processes");
     }
 

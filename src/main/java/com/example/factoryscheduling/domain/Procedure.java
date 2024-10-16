@@ -30,10 +30,6 @@ public class Procedure {
     @ElementCollection(fetch = FetchType.EAGER)
     private List<Integer> nextProcedureNo;
 
-    private LocalDateTime planStartDate;
-
-    private LocalDateTime planEndDate;
-
     private LocalDateTime startTime;
 
     private LocalDateTime endTime;
@@ -104,22 +100,6 @@ public class Procedure {
 
     public void setNextProcedureNo(List<Integer> nextProcedureNo) {
         this.nextProcedureNo = nextProcedureNo;
-    }
-
-    public LocalDateTime getPlanEndDate() {
-        return planEndDate;
-    }
-
-    public void setPlanEndDate(LocalDateTime planEndDate) {
-        this.planEndDate = planEndDate;
-    }
-
-    public LocalDateTime getPlanStartDate() {
-        return planStartDate;
-    }
-
-    public void setPlanStartDate(LocalDateTime planStartDate) {
-        this.planStartDate = planStartDate;
     }
 
     public LocalDateTime getStartTime() {
