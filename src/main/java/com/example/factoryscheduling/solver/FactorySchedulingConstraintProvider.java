@@ -15,11 +15,11 @@ import org.springframework.util.CollectionUtils;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.Objects;
 
-import static org.optaplanner.core.api.score.stream.ConstraintCollectors.min;
-import static org.optaplanner.core.api.score.stream.ConstraintCollectors.sum;
+import static org.optaplanner.core.api.score.stream.ConstraintCollectors.*;
 
 @Slf4j
 public class FactorySchedulingConstraintProvider implements ConstraintProvider {
@@ -38,15 +38,22 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
     }
 
 
+
     // 约束1: 顺序工序必须按顺序进行
     Constraint sequentialProcesses(ConstraintFactory factory) {
-        return factory.forEachUniquePair(Timeslot.class, Joiners.equal(timeslot -> timeslot.getOrder().getId()),
-                        Joiners.filtering((timeslot, timeslot2) -> !CollectionUtils.isEmpty(timeslot.getProcedure().getNextProcedureNo()) && timeslot.getProcedure().getNextProcedureNo().contains(timeslot2.getProcedure().getProcedureNo())),
-                        Joiners.filtering((timeslot, timeslot2) -> timeslot.getDateTime() != null && timeslot2.getDateTime() != null))
-                .filter((timeslot, timeslot2) -> timeslot2.getDateTime().isBefore(timeslot.getDateTime().plusMinutes(timeslot.getDailyHours())))
-                .penalize(HardSoftScore.ONE_HARD,
-                        ((timeslot, timeslot2) -> (int) Duration.between(timeslot2.getDateTime(),
-                                timeslot.getDateTime().plusMinutes(timeslot.getDailyHours())).toDays()))
+        return factory.forEach(Timeslot.class)
+                .join(Timeslot.class,
+                        Joiners.equal(t1 -> t1.getOrder().getId(), t2 -> t2.getOrder().getId()),
+                        Joiners.filtering((t1, t2) -> !CollectionUtils.isEmpty(t1.getProcedure().getNextProcedureNo())
+                                && t1.getProcedure().getNextProcedureNo().contains(t2.getProcedure().getProcedureNo())),
+                        Joiners.filtering((timeslot, timeslot2) -> timeslot.getDateTime() != null
+                                && timeslot2.getDateTime() != null))
+//                .groupBy(max((timeslot, timeslot2) -> timeslot.getDateTime(), LocalDateTime::compareTo),
+//                        min((timeslot, timeslot2) -> timeslot2.getDateTime(), LocalDateTime::compareTo))
+//                .filter(LocalDateTime::isAfter)
+                .filter((timeslot, timeslot2) -> timeslot.getDateTime().plusMinutes(timeslot.getDailyHours())
+                        .isAfter(timeslot2.getDateTime()))
+                .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Sequential processes");
     }
 
