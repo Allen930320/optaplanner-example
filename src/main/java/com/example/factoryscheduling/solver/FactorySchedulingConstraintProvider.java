@@ -16,10 +16,12 @@ import org.springframework.util.CollectionUtils;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.Objects;
 
-import static org.optaplanner.core.api.score.stream.ConstraintCollectors.*;
+import static org.optaplanner.core.api.score.stream.ConstraintCollectors.min;
+import static org.optaplanner.core.api.score.stream.ConstraintCollectors.sum;
 
 @Slf4j
 public class FactorySchedulingConstraintProvider implements ConstraintProvider {
@@ -32,7 +34,6 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                 machineModelMatch(constraintFactory),
                 machineCapacityConstraint(constraintFactory),
                 earlierPlanStartTime(constraintFactory),
-                // workingWithMaintenanceConflict(constraintFactory),
                 minimizeMakeSpan(constraintFactory)
         };
     }
@@ -48,9 +49,6 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                                 && t1.getProcedure().getNextProcedureNo().contains(t2.getProcedure().getProcedureNo())),
                         Joiners.filtering((timeslot, timeslot2) -> timeslot.getDateTime() != null
                                 && timeslot2.getDateTime() != null))
-//                .groupBy(max((timeslot, timeslot2) -> timeslot.getDateTime(), LocalDateTime::compareTo),
-//                        min((timeslot, timeslot2) -> timeslot2.getDateTime(), LocalDateTime::compareTo))
-//                .filter(LocalDateTime::isAfter)
                 .filter((timeslot, timeslot2) -> timeslot.getDateTime().plusMinutes(timeslot.getDailyHours())
                         .isAfter(timeslot2.getDateTime()))
                 .penalize(HardSoftScore.ONE_HARD)
@@ -64,7 +62,7 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
 
 
     // 约束2: 并行工序可以同时进行
-    Constraint parallelProcesses(ConstraintFactory factory) {
+    Constraint parallelProcedure(ConstraintFactory factory) {
         return factory.forEach(Procedure.class)
                 .join(Link.class)
                 .penalize(HardSoftScore.ONE_SOFT)
@@ -81,23 +79,13 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
                 .asConstraint("Machine conflict");
     }
 
-    // 约束4: 尊重计划开始时间
-    Constraint respectPlanStartTime(ConstraintFactory factory) {
-        return factory.forEach(Timeslot.class)
-                .filter(timeslot -> timeslot.getProcedure().getProcedureNo().equals(0))
-                .penalize(HardSoftScore.ONE_HARD)
-                .asConstraint("Respect plan start time");
-    }
 
     // 约束6: 鼓励提前计划开始时间
     Constraint earlierPlanStartTime(ConstraintFactory factory) {
         return factory.forEach(Timeslot.class)
-                .groupBy(timeslot -> timeslot.getOrder().getOrderNo() + timeslot.getProcedure().getOrderNo(),
-                        min(timeslot -> timeslot,
-                                Comparator.comparing(
-                                        timeslot -> timeslot.getMaintenance().getDate().atStartOfDay().getMinute())))
-                .reward(HardSoftScore.ONE_SOFT, (s, timeslot) -> (int) Duration.between(LocalDate.now().atStartOfDay(),
-                        timeslot.getMaintenance().getDate().atStartOfDay()).toDays())
+                .filter(timeslot -> timeslot.getDateTime() != null)
+                .groupBy(timeslot -> timeslot.getOrder().getId(), min(Timeslot::getDateTime, LocalDateTime::compareTo))
+                .reward(HardSoftScore.ONE_SOFT, (s, time) -> (int) Duration.between(LocalDate.now().atTime(LocalTime.of(9,0)), time).toDays())
                 .asConstraint("Earlier plan start time");
     }
 
@@ -229,11 +217,8 @@ public class FactorySchedulingConstraintProvider implements ConstraintProvider {
      * 最小化制造周期：尽量减少所有订单的总完成时间
      */
     private Constraint minimizeMakeSpan(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEachUniquePair(Timeslot.class)
-                .filter(((timeslot, timeslot2)
-                        -> !timeslot.getOrder().getOrderNo().equals(timeslot2.getOrder().getOrderNo())))
-                .filter(((timeslot, timeslot2)
-                        -> !timeslot.getProcedure().getProcedureNo().equals(timeslot2.getProcedure().getProcedureNo())))
+        return constraintFactory
+                .forEachUniquePair(Timeslot.class, Joiners.equal(timeslot -> timeslot.getProcedure().getId()))
                 .filter(((timeslot, timeslot2)
                         -> timeslot.getDateTime() != null && timeslot2.getDateTime() != null && timeslot.getDateTime().plusMinutes(timeslot.getDailyHours()).isAfter(timeslot2.getDateTime())))
                 .penalize(HardSoftScore.ONE_SOFT,

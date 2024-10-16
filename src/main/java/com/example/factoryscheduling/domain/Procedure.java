@@ -4,7 +4,6 @@ import org.hibernate.annotations.GenericGenerator;
 import org.optaplanner.core.api.domain.lookup.PlanningId;
 
 import javax.persistence.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -36,6 +35,8 @@ public class Procedure {
 
     @Enumerated(EnumType.STRING)
     private Status status;
+
+    private boolean isParallel;
 
     public Long getId() {
         return id;
@@ -116,5 +117,13 @@ public class Procedure {
 
     public void setEndTime(LocalDateTime endTime) {
         this.endTime = endTime;
+    }
+
+    public boolean isParallel() {
+        return isParallel;
+    }
+
+    public void setParallel(boolean parallel) {
+        isParallel = parallel;
     }
 }

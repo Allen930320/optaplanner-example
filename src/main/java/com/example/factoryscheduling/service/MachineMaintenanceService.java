@@ -49,7 +49,7 @@ public class MachineMaintenanceService {
     public List<MachineMaintenance> autoCreateMaintenance(Machine machine) {
         LocalDate now = LocalDate.now();
         List<MachineMaintenance> maintenances = new ArrayList<>();
-        for (int i = 1; i <= 28; i++) {
+        for (int i = 1; i <= 30; i++) {
             MachineMaintenance maintenance = new MachineMaintenance(machine, now.plusDays(i), 480, null);
             maintenance.setStartTime(LocalTime.of(9, 0));
             maintenance.setEndTime(maintenance.getStartTime().plusMinutes(maintenance.getCapacity()));
