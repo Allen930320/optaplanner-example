@@ -11,6 +11,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class MachineMaintenanceService {
@@ -22,17 +24,9 @@ public class MachineMaintenanceService {
     public void setMaintenanceRepository(MachineMaintenanceRepository maintenanceRepository) {
         this.maintenanceRepository = maintenanceRepository;
     }
-
     @Autowired
     public void setMachineService(MachineService machineService) {
         this.machineService = machineService;
-    }
-
-    public MachineMaintenance scheduleMaintenance(Long machineId, LocalDate date, int duration, String description) {
-        Machine machine = machineService.getMachineById(machineId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid machine ID"));
-        MachineMaintenance maintenance = new MachineMaintenance(machine, date, duration, description);
-        return maintenanceRepository.save(maintenance);
     }
 
     @Transactional
@@ -67,19 +61,33 @@ public class MachineMaintenanceService {
         return maintenances;
     }
 
-    public void cancelMaintenance(Long maintenanceId) {
-        maintenanceRepository.deleteById(maintenanceId);
-    }
-
-    public List<MachineMaintenance> getMaintenanceSchedule(Machine machine, LocalDate localDate) {
-        return maintenanceRepository.findByMachineAndDate(machine, localDate);
-    }
-
     public List<MachineMaintenance> getAllMaintenances() {
         return maintenanceRepository.findAll();
     }
-    public void updateAll(List<MachineMaintenance> maintenances){
-        maintenanceRepository.saveAll(maintenances);
+
+    public List<MachineMaintenance> updateAll(List<MachineMaintenance> maintenances) {
+        List<MachineMaintenance> list = maintenances.stream().map(maintenance -> {
+            if (maintenance.getStartTime().isAfter(maintenance.getEndTime())) {
+                throw new IllegalArgumentException("开始时间不能晚于结束时间");
+            }
+            MachineMaintenance machineMaintenance = maintenanceRepository.findById(maintenance.getId()).orElse(null);
+            if (machineMaintenance == null) {
+                return null;
+            }
+            if (maintenance.getStatus() != null) {
+                machineMaintenance.setStatus(maintenance.getStatus());
+            }
+            if (maintenance.getStartTime() != null) {
+                machineMaintenance.setStartTime(maintenance.getStartTime());
+            }
+            if (maintenance.getEndTime() != null) {
+                machineMaintenance.setStartTime(maintenance.getEndTime());
+            }
+            machineMaintenance
+                    .setCapacity(maintenance.getEndTime().getMinute() - maintenance.getStartTime().getMinute());
+            return machineMaintenance;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+        return maintenanceRepository.saveAll(list);
     }
 
 

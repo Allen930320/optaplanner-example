@@ -43,7 +43,6 @@ public class MachineMaintenance {
         this.status = MachineStatus.IDLE;
     }
 
-    // Getters and setters
 
     public Long getId() {
         return id;

@@ -1,8 +1,6 @@
 package com.example.factoryscheduling.controller;
 
 import com.example.factoryscheduling.domain.Procedure;
-import com.example.factoryscheduling.domain.Timeslot;
-import com.example.factoryscheduling.resquest.ProcedureRequest;
 import com.example.factoryscheduling.service.ProcedureService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -14,19 +12,25 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/processes")
-public class ProcessController {
+@RequestMapping("/api/procedure")
+public class ProcedureController {
 
-    private ProcedureService processService;
+    private ProcedureService procedureService;
 
 
     @Autowired
     public void setProcessService(ProcedureService processService) {
-        this.processService = processService;
+        this.procedureService = processService;
     }
 
     @PostMapping
-    public ResponseEntity<List<Procedure>> createProcesses(@RequestBody List<Procedure> processes) {
-        return ResponseEntity.ok(processService.createProcesses(processes));
+    public ResponseEntity<List<Procedure>> createProcesses(@RequestBody List<Procedure> procedures) {
+        return ResponseEntity.ok(procedureService.createProcesses(procedures));
+    }
+
+
+    @PostMapping("/list")
+    public ResponseEntity<List<Procedure>> createProcedure(@RequestBody List<Procedure> procedures) {
+        return ResponseEntity.ok(procedureService.createProcesses(procedures));
     }
 }

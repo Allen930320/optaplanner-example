@@ -12,8 +12,8 @@ public class Procedure {
 
     @Id
     @PlanningId
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "processId")
-    @GenericGenerator(name = "processId", strategy = "com.example.factoryscheduling.domain.InsertGenerator")
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "procedureId")
+    @GenericGenerator(name = "procedureId", strategy = "com.example.factoryscheduling.domain.InsertGenerator")
     private Long id;
 
     private String orderNo;

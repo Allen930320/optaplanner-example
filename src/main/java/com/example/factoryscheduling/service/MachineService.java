@@ -51,8 +51,7 @@ public class MachineService {
     }
 
     public List<Machine> create(List<Machine> machines){
-        machineRepository.saveAll(machines);
-        return machines;
+        return machineRepository.saveAll(machines);
     }
 
     public Machine findFirstByMachineNo(String machineNo){

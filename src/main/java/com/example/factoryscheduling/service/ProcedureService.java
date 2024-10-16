@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,7 +18,7 @@ import java.util.stream.Collectors;
 @Service
 public class ProcedureService {
 
-    private ProcedureRepository processRepository;
+    private ProcedureRepository procedureRepository;
 
     private TimeslotRepository timeslotRepository;
 
@@ -43,8 +42,8 @@ public class ProcedureService {
     }
 
     @Autowired
-    public void setProcessRepository(ProcedureRepository processRepository) {
-        this.processRepository = processRepository;
+    public void setProcedureRepository(ProcedureRepository procedureRepository) {
+        this.procedureRepository = procedureRepository;
     }
     @Transactional
     public List<Procedure> createProcesses(List<Procedure> procedures) {
@@ -64,7 +63,7 @@ public class ProcedureService {
                 newP.add(procedure);
             }
         });
-        procedures = processRepository.saveAll(newP);
+        procedures = procedureRepository.saveAll(newP);
         for (Procedure procedure : procedures) {
             Order order = orderService.findFirstByOrderNo(procedure.getOrderNo());
             if (order == null) {
@@ -79,6 +78,22 @@ public class ProcedureService {
         return newP;
     }
 
+
+    @Transactional
+    public List<Procedure> createProcedure(List<Procedure> procedures) {
+        for (Procedure procedure : procedures) {
+            Order order = orderService.findFirstByOrderNo(procedure.getOrderNo());
+            if (order == null) {
+                throw new IllegalArgumentException("Invalid order no");
+            }
+            Machine machine = machineService.findFirstByMachineNo(procedure.getMachineNo());
+            if (machine == null) {
+                throw new IllegalArgumentException("Invalid machine no");
+            }
+            createTimeslot(order, procedure, machine);
+        }
+        return procedureRepository.saveAll(procedures);
+    }
 
 
     public void createTimeslot(Order order, Procedure procedure, Machine machine) {
@@ -105,11 +120,11 @@ public class ProcedureService {
     }
 
     public List<Procedure> findAll() {
-        return processRepository.findAll();
+        return procedureRepository.findAll();
     }
 
 
     public Procedure findFirstByOrderNoAndMachineNoAndProcedureNo(String orderNo,String machineNo,Integer procedureNo){
-        return processRepository.findFirstByOrderNoAndMachineNoAndProcedureNo(orderNo,machineNo,procedureNo);
+        return procedureRepository.findFirstByOrderNoAndMachineNoAndProcedureNo(orderNo,machineNo,procedureNo);
     }
 }
